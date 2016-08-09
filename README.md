@@ -14,35 +14,65 @@ Enforces AppArmor
 Secures the bootloader
 
 Disables AppPort
+
 Disables unwanted services
+
 Disables unneeded kernel modules
+
 Disables unneeded file systems
+
 Secures Mounts
+
 Disables unwanded and potentially dangerous protocols
+
 Disables creation of user and system core dumps
+
 Configures sysctl parameters
+
 Configures user security limits
+
 Removes suid bits from certain executables
+
 Sets global system umask to 027
+
 Locks up CTRL+ALT+DEL
+
 Disables root logins - Locks out root account
+
 Secures user and services hosts files
+
 Configures Banners
+
 Configures TCP Wrappers
+
 Applies account password policy
+
 Removes unneeded users
+
 Secures Apache Server
+
 Secure NFS Server
+
 Secures SSHD server
+
 Locks up cronjobs for users other than root
+
 Configures UFW
+
 Disables IPV6
+
 Configures secure DNS resolvers
+
 Secures NTP Client
+
 Configures logrotate
+
 Enforces auditd rules
+
 Enables RKHUNTER
+
 Enables CLAMAV
+
 Sets AIDE
 
 Tasks that required interactive input from the user, such as keys 
