@@ -6,9 +6,13 @@ a bash script was developed. The script makes the following changes
 to the system:
 
 Installs needed packages
+
 Sets Auto-installation of security updates via cronjob
+
 Enforces AppArmor
+
 Secures the bootloader
+
 Disables AppPort
 Disables unwanted services
 Disables unneeded kernel modules
