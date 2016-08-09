@@ -48,7 +48,7 @@ MKPASSWD='/usr/bin/grub-mkpasswd-pbkdf2'
 MOD='bluetooth firewire-core net-pf-31 soundcore thunderbolt usb-midi'
 MODSEC='/etc/modsecurity/modsecurity.conf'
 PACKAGES="acct aide-common apache2 apparmor-profiles apparmor-utils auditd \
-clamav clamdscan clamav-daemon debsums expect fail2ban haveged \
+clamav clamdscan clamav-daemon debsums expect fail2ban git haveged \
 libapache2-mod-security2 libapache2-mod-evasive libpam-cracklib \
 libpam-tmpdir nfs-kernel-server openssh-server rkhunter samba $VM"
 PAMLOGIN='/etc/pam.d/login'
@@ -69,6 +69,7 @@ UNW_PROT='dccp sctp rds tipc'
 UNW_SERVICES='rpcbind'
 UNW_FS='cramfs freevxfs jffs2 hfs hfsplus squashfs udf vfat'
 VERBOSE='Y'
+VM=''
 ################################################################################
 # CONFIGURATION ENDS HERE
 # Do not change anything below this line!
@@ -666,7 +667,7 @@ cat > /etc/apache2/mods-available/evasive.conf <<EOF
 </ifmodule>
 EOF
 
-a2enmod ssl evasive security2
+a2enmod ssl evasive security2 headers
 service apache2 restart
 
 # Enable fail2ban
