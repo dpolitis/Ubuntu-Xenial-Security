@@ -81,5 +81,5 @@ where skipped intentionally, but the user can easily set them up by
 copy-pasting the commands from the appropriate sections of the 
 documentation, to the system console.
 
-Script and documentation based heavily on RedHat7 Security Guide
-and https://github.com/konstruktoid/hardening, among others.
+Script and documentation based heavily on RHEL7 Security Guide
+(https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/7/pdf/Security_Guide/Red_Hat_Enterprise_Linux-7-Security_Guide-en-US.pdf) and https://github.com/konstruktoid/hardening, among others.
