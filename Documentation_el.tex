@@ -1,0 +1,2932 @@
+\documentclass[12pt]{report}
+\usepackage[a4paper,twoside,top=30mm,bottom=20mm,inner=35mm,outer=20mm]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[greek,english]{babel}
+\usepackage[scaled=0.86]{couriers}
+\usepackage[toc,page,title,titletoc]{appendix}
+\usepackage[pdfpagelabels,unicode]{hyperref}
+\usepackage{bookmark}
+\usepackage[fixlanguage]{babelbib}
+\selectbiblanguage{greek}
+\usepackage{titlesec}
+\usepackage{etoolbox}
+
+\hypersetup{
+  colorlinks=true,
+  % linkcolor=green,
+  citecolor=red,
+  % filecolor=blue,
+  urlcolor=blue,
+  % pdftitle=,
+  % pdfauthor=,
+  % pdfsubject=,
+  % pdfkeywords=
+}
+
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{3}
+
+\titleformat{\chapter}
+  {\normalfont\LARGE\bfseries}{\thechapter}{1em}{}
+\titlespacing*{\chapter}{0pt}{3.5ex plus 1ex minus .2ex}{2.3ex plus .2ex}
+
+\makeatletter
+\patchcmd\@resets@pp{%
+  \def\Hy@chapapp{\appendixname }%
+}{%
+  \def\Hy@chapapp{appendix}%
+}{}{\errmessage{Cannot patch \string\@resets@pp}}
+\patchcmd\@resets@ppsub{%
+  \def\Hy@chapapp{\appendixname }%
+}{%
+  \def\Hy@chapapp{appendix}%
+}{}{\errmessage{Cannot patch \string\@resets@pp}}
+\makeatother
+
+\addto{\captionsgreek}{\renewcommand{\appendixpagename}{Παραρτήματα}}
+\addto{\captionsgreek}{\renewcommand{\appendixtocname}{Παραρτήματα}}
+\addto{\captionsgreek}{\renewcommand{\appendixname}{Παράρτημα}}
+
+\begin{document}
+\selectlanguage{greek}
+
+\title{Ασφάλεια Συστημάτων \textlatin{Ubuntu 16.04LTS}}
+\author{
+        Δημήτριος Πολίτης\\
+        Αθήνα, \underline{Ελλάδα}
+}
+\date{\today}
+
+\hypersetup{pageanchor=false}
+
+\maketitle
+
+\tableofcontents
+
+\begin{abstract}
+Στο σύγχρονο, συνεχώς μεταλλασσόμενο επαγγελματικό περιβάλλον, οι διαχειριστές συστημάτων αντιμετωπίζουν καθημερινά νέες προκλήσεις, καθώς προσπαθούν να ασφαλίσουν τις υποδομές τους. Το αυτό βρίσκει εφαρμογή με περισσότερη έμφαση στα διασυνδεδεμένα δίκτυα, όπου διακινουνται πολύτιμες πληροφορίες, μεταξύ μεγάλου πλήθους συσκευών. Στο παρόν, γίνεται μια προσπάθεια να σκιαγραφηθούν βασικές διαδικασίες ασφάλισης ενός εξυπηρετητή \textlatin{Linux}. Οι παραπάνω οδηγίες αφορούν κυρίως σε λειτουργικό σύστημα \textlatin{Ubuntu 16.04 LTS (Desktop} ή \textlatin{Server)}. Το παρόν πόνημα, καθώς και το \textlatin{bash script}, το οποίο το συνοδεύει παρέχονται υπό τους όρους της αδείας \textlatin{GPLv3} και είναι διαθέσιμα στο διαδίκτυο, στην Αγγλική και στην Ελληνική γλώσσα, από την ιστοσελίδα: \textlatin{\url{https://github.com/dpolitis/Ubuntu-Xenial-Security/}}.
+\end{abstract}
+
+\chapter{Εισαγωγή στην Ασφάλεια Η/Υ}
+\hypersetup{pageanchor=true}
+
+\section{Η έννοια της ασφάλειας Η/Υ}
+Η ασφάλεια Η/Υ είναι ένας γενικότερος όρος, ο οποίος καλύπτει μια ευρεία περιοχή της επιστήμης των Η/Υ και της επεξεργασίας της πληροφορίας. Αρκετοί σύμβουλοι ασφαλείας Πληροφορικής, καθώς και εταιρίες του χώρου συμφωνούν στο κοινώς αποδεκτό μοντέλο ασφαλείας Η/Υ, γνωστό και ως ΕΑΔ (\textlatin{CIA}) \textbf{Εμπιστευτικότητα, Ακεραιότητα} και \textbf{Διαθεσιμότητα}. Αυτό το τρίπτυχο θεωρείται ως γενικά αποδεκτό για την αξιολόγηση ασφαλείας των Πληροφοριακών Συστημάτων (ΠΣ). Παρακάτω παρατίθεται επεξήγηση του μοντέλου ΕΑΔ, με περισσότερη λεπτομέρεια~\cite{Red:01}:
+
+\paragraph{Εμπιστευτικότητα}
+Οι ευαίσθητες πληροφορίες θα πρέπει να είναι διαθέσιμες μόνο σε ένα αυστηρά καθορισμένο σύνολο οντοτήτων. Μη εξουσιοδοτημένη εκπομπή και χρήση της πληροφορίας αυτής, θα πρέπει να περιορίζεται αυστηρά.
+
+\paragraph{Ακεραιότητα}
+Η πληροφορία δε θα πρέπει να αλλοιώνεται με οποιοδήποτε τρόπο, ο οποίος την καθιστά ελλιπή ή εσφαλμένη. Μη εξουσιοδοτημένοι χρήστες δεν θα πρέπει να έχουν τη δυνατότητα να τροποποιούν ή να καταστρέφουν ευαίσθητα δεδομένα.
+
+\paragraph{Διαθεσιμότητα}
+Οι πληροφορίες θα πρέπει να είναι διαθέσιμες στους εξουσιοδοτημένους χρήστες κάθε φορά που αυτό είναι απαραίτητο.
+
+\section{Έλεγχοι Ασφαλείας}
+Η ασφάλεια Η/Υ χωρίζεται συχνά σε τρεις κύριες διακριτές κατηγορίες ή ελέγχους:
+
+\paragraph{Φυσικούς Ελέγχους}
+Περιλαμβάνει όλα τα μέτρα ασφαλείας που αφορούν τη φυσική προστασία των υποδομών.
+
+\paragraph{Τεχνικούς Ελέγχους}
+Αφορά την εγκατάσταση πολιτικών ασφαλείας στο σύνολο του εξοπλισμού (εξυπηρετητών, κατανεμητών κτλ).
+
+\paragraph{Διαχειριστικούς Ελέγχους}
+Αφορά σε πολιτικές ασφαλείας οργανισμού, έλεγχοι φυσικής πρόσβασης προσωπικού σε υποδομές κτλ.
+
+Στο επόμενο μέρος παρουσιάζεται μια σειρά από ρυθμίσεις ασφαλείας (τεχνικοί έλεγχοι) που μπορούν να εφαρμοστούν σε μια ελαχιστοποιημένη εγκατάσταση Λειτουργικού Συστήματος (ΛΣ) \textlatin{Linux}.
+
+\chapter{Συμβουλές Ασφαλούς Εγκατάστασης ΛΣ \textlatin{Linux}}
+Το επόμενο μέρος αφορά στην ασφάλιση μιας τυπικής εγκατάστασης \textlatin{Ubuntu 16.04LTS}, τύπου \textlatin{Desktop} ή \textlatin{Server}. Βασική γνώση της χρήσης της γραμμής εντολών και η ελάχιστη εμπειρία εγκατάστασης ΛΣ \textlatin{Linux} θεωρείται απαραίτητη. Η διαδικασία ασφάλισης ακολουθεί μια πορεία \textlatin{bottom-up}, ξεκινώντας από τις ρυθμίσεις του \textlatin{BIOS} και καταλήγοντας στην 
+εκτεταμένη επιτήρηση (\textlatin{auditd}) και αξιολόγηση του συστήματος.
+
+\section{Ρυθμίσεις \textlatin{Bios}}
+Οι δυο κύριοι λόγοι ασφάλισης του \textlatin{BIOS} φαίνονται παρακάτω:
+
+\paragraph{Αποτροπή των αλλαγών στις ρυθμίσεις του \textlatin{BIOS}}
+Αν ένας επιτιθέμενος έχει πρόσβαση στο \textlatin{BIOS}, μπορεί να αλλάξει τη σειρά εκκίνησης και να ξεκινήσει τον Η/Υ με ένα \textlatin{CD-ROM} ή \textlatin{usb} αποθηκευτικό μέσο. Αυτό τον καθιστά ικανό να εισέλθει σε \textlatin{rescue mode} ή \textlatin{single user mode}, το οποίο με τη σειρά του, του επιτρέπει να εκτελέσει αυθαίρετα προγράμματα στο σύστημα ή να υποκλέψει ευαίσθητα δεδομένα.
+
+\paragraph{Αποκλεισμός Εκκίνησης}
+Κάποια \textlatin{BIOS} προστατεύουν την διαδικασία εκκίνησης με κωδικό πρόσβασης. Όταν ενεργοποιείται, ο επιτιθέμενος εξαναγκάζεται στην εισαγωγή κωδικού, πριν το \textlatin{BIOS} καλέσει το \textlatin{bootloader}.
+
+\section{Διαμερισμός Δίσκου}
+Είναι μια καλή πρακτική να δημιουργούνται ξεχωριστά διαμερίσματα για τους φακελους \textlatin{/boot/, /, /home/, /tmp/} και \textlatin{/var/tmp/}. Ο λόγος είναι διαφορετικός για το κάθε ένα και εξετάζονται αναλυτικά παρακάτω.
+
+\paragraph{\textlatin{/boot}}
+Αυτό είναι το πρώτο διαμέρισμα το οποίο διαβάζει το ΛΣ κατά την εκκίνηση. Ο πυρήνας και ο \textlatin{bootloader} οι οποίο εκκινούν το ΛΣ, αποθηκεύονται σε αυτό το διαμέρισμα. Αυτό το διαμέρισμα λοιπόν δε θα πρέπει να είναι κρυπτογραφημένο, γιατί αν για κάποιο λόγο γίνει μη διαθέσιμο (για παράδειγμα είναι στο ίδιο διαμέρισμα με το κρυπτογραφημένο / και χαθεί το \textlatin{passphrase}), τότε το σύστημα δε θα είναι σε θέση να εκκινήσει.
+
+Είναι επίσης καλή πρακτική το \textlatin{\texttt{/boot}} να προσαρτάται ως μόνο για ανάγνωση. Αυτό προστατεύει τα κρίσιμα αρχεία του συστήματος από μη εξουσιοδοτημένη τροποποίηση. Για να το επιτύχουμε αυτό τροποποιούμε το αρχείο \textlatin{\texttt{/etc/fstab}}
+\selectlanguage{english}
+\begin{verbatim}
+~]# vi /etc/fstab
+\end{verbatim}
+\selectlanguage{greek}
+ως εξής~\cite{Sai:01}:
+\selectlanguage{english}
+\begin{verbatim}
+/boot     /boot     ext2     defaults,ro     1 2
+\end{verbatim}
+\selectlanguage{greek}
+Αξίζει να σημειωθεί, ότι είναι αναγκαία η προσάρτηση του παραπάνω τόμου με δικαιώματα εγγραφής, αν χρειαστεί στο μέλλον να γίνει αναβάθμιση του πυρήνα ή αλλαγή ρυθμίσεων στο \textlatin{bootloader}.
+
+\paragraph{\textlatin{/home}}
+Σε περίπτωση που τα αρχεία των χρηστών (\textlatin{\texttt{/home}}) βρίσκονται στο ίδιο διαμέρισμα με το \textlatin{\texttt{/}}, αντί ενός ξεχωριστού τόμου, τότε αυτό μπορεί να γεμίσει με αρχεία και ως αποτέλεσμα να καταστεί το σύστημα ασταθές. Επίσης, κατά την μετάβαση σε νεότερη έκδοση του ΛΣ, είναι ευκολότερο να διατηρηθούν τα δεδομένα στο διαμέρισμα \textlatin{\texttt{/home}}, καθώς δε θα διαγραφούν κατά την εγκατάσταση. Επίσης αν ο τόμος \textlatin{\texttt{/}} αλλοιωθεί για κάποιο λόγο, τα αρχεία που βρίσκονται σε ξεχωριστό τόμο δε θα χαθούν. Χρησιμοποιώντας διαφορετικούς τόμους για τα δεδομένα, υπάρχει μεγαλύτερη προστασία από απώλεια δεδομένων, ενώ είναι πιο εύκολο να λαμβάνονται από αυτό, προγραμματισμένα αντίγραφα ασφαλείας.
+
+\paragraph{\textlatin{/tmp} και \textlatin{/var/tmp}}
+Οι φάκελοι \textlatin{\texttt{/tmp}} και \textlatin{\texttt{/var/tmp}} χρησιμοποιούνται για προσωρινή αποθήκευση δεδομένων. Είναι όμως δυνατό να γεμίσουν σχετικά γρήγορα και να απορροφήσουν όλο το διαθέσιμο χώρο. Αν τυγχάνει οι φάκελοι να βρίσκονται στο ίδιο τόμο με το \textlatin{\texttt{/}}, τότε το σύστημα μπορεί να καταστεί ασταθές ή να καταρρεύσει. Για αυτό το λόγο είναι καλή ιδέα να βρίσκονται σε δικό τους διαμέρισμα - τόμο. Επίσης είναι καλή πρακτική η απενεργοποίηση των δικαιωμάτων εκτέλεσης στο \textlatin{\texttt{/tmp}}.
+
+\paragraph{\textlatin{/dev/shm}}
+Επίσης είναι μια πολύ καλή πρακτική η απενεργοποίηση των δικαιωμάτων εκτέλεσης στη κοινόχρηστη μνήμη (\textlatin{shared memory}). Αυτό επιτυγχάνεται δημιουργώντας το αρχείο \textlatin{\texttt{/etc/systemd/system/dev-shm.mount}}.
+
+\selectlanguage{english}
+\begin{verbatim}
+~]# cat > /etc/systemd/system/tmp.mount << EOF
+# /etc/systemd/system/default.target.wants/tmp.mount -> ../tmp.mount
+
+[Unit]
+Description=Temporary Directory
+Documentation=man:hier(7)
+Before=local-fs.target
+
+[Mount]
+What=tmpfs
+Where=/tmp
+Type=tmpfs
+Options=mode=1777,strictatime,nosuid,noexec
+EOF
+\end{verbatim}
+\selectlanguage{greek}
+και ένα \textlatin{symlink}~\cite{Hit:01}:
+\selectlanguage{english}
+\begin{verbatim}
+~]# ln -s /etc/systemd/system/dev-shm.mount /etc/systemd/system/
+default.target.wants/dev-shm.mount
+\end{verbatim}
+\selectlanguage{greek}
+και έπειτα επανεκκίνηση του \textlatin{systemctl}:
+\selectlanguage{english}
+\begin{verbatim}
+~]# systemctl daemon-reload
+\end{verbatim}
+\selectlanguage{greek}
+Οι φάκελοι \textlatin{\texttt{/tmp}} και \textlatin{\texttt{/var/tmp}} ασφαλίζονται με τον ίδιο τρόπο.
+
+\section{Ασφάλιση του \textlatin{Boot Loader}}\label{secboot}
+Η αλλαγή των παραμέτρων \textlatin{\texttt{GRUB\_TIMEOUT=0}} και \textlatin{\texttt{GRUB\_HIDDEN\_TIMEOUT=0}} στο αρχείο \textlatin{\texttt{/etc/default/grub}} δεν είναι μια ασφαλής επιλογή και είναι καλύτερο να ασφαλίζεται ο \textlatin{bootloader} με κωδικό πρόσβασης:
+
+\paragraph{Απόκλεισμός Πρόσβασης στο \textlatin{Single User Mode}}
+Αν κάποιος επίδοξος εισβολέας μπορέσει να εκκινήσει το σύστημα σε αυτό το \textlatin{mode}, τότε μπορεί να εισέλθει στο σύστημα χωρίς να εισάγει τον κωδικό του \textlatin{root}.
+
+\paragraph{Απόκλεισμός Πρόσβασης στο \textlatin{GRUB 2 Console}}
+Αν το σύστημα χρησιμοποιεί \textlatin{GRUB 2} ως \textlatin{bootloader}, ένας εισβολέας μπορεί να χρησιμοποιήσει την κονσόλα του ώστε να αλλάξει ρυθμίσεις ή να συλλέξει πληροφορίες, χρησιμοποιώντας την εντολή \textlatin{\texttt{cat}}.
+
+\paragraph{Απόκλεισμός Πρόσβασης σε μη Ασφαλή ΛΣ}
+Αν το σύστημα είναι \textlatin{dualboot} τότε ένας κακόβουλος χρήστης μπορεί να επιλέξει να εκκινήσει ένα ΛΣ, το οποίο αγνοεί τα δικαιώματα των αρχείων και τους ελέγχους ασφαλείας του συστήματος αρχείων.
+
+Για να ενεργοποιηθεί η χρήση κωδικού πρόσβασης κατά την εκκίνηση, πρέπει να ενεργοποιηθεί ένας υπερχρήστης, οποίος να έχει πρόσβαση στις προστατευμένες εγγραφές. Συνίσταται ο υπερχρήστης να είναι \textbf{διαφορετικός από τους χρήστες του ΛΣ}. Μπορούν να οριστούν και απλοί χρήστες που θα έχουν πρόσβαση μόνο επιλογής. Για να δημιουργηθεί ένας κωδικός για τον υπερχρήστη, δώστε τις παρακάτω εντολές:
+\selectlanguage{english}
+\begin{verbatim}
+~]# grub-mkpasswd-pbkdf2
+\end{verbatim}
+\selectlanguage{greek}
+Τώρα εισάγετε το \textlatin{hash}, που δημιουργήθηκε στο κατάλληλο αρχείο:
+\selectlanguage{english}
+\begin{verbatim}
+~]# cat >> /etc/grub.d/40_custom <<EOF
+set superusers="myuser"
+password_pbkdf2 myuser grub.pbkdf2.sha512.10000.64A6B637605F49DF603B062
+0ACAC22A1CD074E5969CFB41F7E6F633EB988DBBAB43356377F05B33CF4BFAFAEFE5163
+B0FEDA48FE71FE5ADA63CCE2C6D6B29485.7E2FD8CC9A4CCD7951F7E333CB55E743E355
+9A6C64DD05B6ACBD7BD4EFF2E98902A3FBC63A4E70B443902F0CFB2777533BE874957B3
+9398FA850E40E260E305D
+export superusers
+EOF
+\end{verbatim}
+\selectlanguage{greek}
+Τώρα αλλάξτε την ακόλουθη γραμμή στο αρχείο \textlatin{\texttt{/etc/default/grub}}:
+\selectlanguage{english}
+\begin{verbatim}
+GRUB_CMDLINE_DEFAULT=--users myuser
+\end{verbatim}
+\selectlanguage{greek}
+και τέλος ενημέρωση των ρυθμίσεων:
+\selectlanguage{english}
+\begin{verbatim}
+~]# update-grub
+\end{verbatim}
+\selectlanguage{greek}
+
+Για να απενεργοποιήσετε την πρόσβαση χωρίς κωδικό στο \textlatin{Single User Mode}~\cite{Arr:01}:
+\selectlanguage{english}
+\begin{verbatim}
+~]# vi /lib/systemd/system/emergency.service
+~]# vi /lib/systemd/system/rescue.service
+\end{verbatim}
+\selectlanguage{greek}
+Βρείτε τη γραμμή: \textlatin{\texttt{ExecStart}} και αλλάξτε το \textlatin{\texttt{sushell}} σε \textlatin{\texttt{sulogin}}.
+
+\section{Εφαρμογή Γενικών Ρυθμίσεων Ασφαλείας}
+Εκτός από την ασφάλιση του \textlatin{bootloader} και των προσαρτήσεων των τόμων και άλλα μέτρα ασφαλείας μπορούν να εφαρμοστούν:
+
+\subsection{Διατήρηση του Ελάχιστου ΛΣ}
+Είναι επιθυμητό η αρχική εγκατάσταση του ΛΣ να περιέχει μόνο τα ακρως απαραίτητα πακέτα για τη λειτουργία του, να είναι απενεργοποιημένες υπηρεσίες που δεν είναι αναγκαίες και να έχει ενεργοποιημένο το τείχος προστασίας. Επίσης είναι απαραίτητο το σύστημα να ενημερώνεται συχνά, με αυτόματη εγκατάσταση των ενημερώσεων ασφαλείας.
+\selectlanguage{english}
+\begin{verbatim}
+~]# systemctl list-units | grep service
+~]# systemctl disable rpcbind
+
+~]# ufw enable
+\end{verbatim}
+\selectlanguage{greek}
+εξ΄ ορισμού το \textlatin{ufw} είναι ασφαλές καθώς είναι ρυθμισμένο ώστε να αποκλείει τις εισερχόμενες συνδέσεις και να επιτρέπει τις εξερχόμενες.
+
+Η ρύθμιση των αυτόματων εγκαταστάσεων των ενημερώσεων ασφαλείας γίνεται ως εξής:
+\selectlanguage{english}
+\begin{verbatim}
+~]# cat > /etc/cron.weekly/apt-security-updates << EOF
+echo "**************" >> /var/log/apt-security-updates
+date >> /var/log/apt-security-updates
+aptitude update >> /var/log/apt-security-updates
+aptitude safe-upgrade -o Aptitude::Delete-Unused=false --assume-yes \
+--target-release `lsb_release -cs`-security \
+>> /var/log/apt-security-updates
+echo "Security updates (if any) installed"
+EOF
+
+~]# chmod +x /etc/cron.weekly/apt-security-updates
+
+~]# cat > /etc/logrotate.d/apt-security-updates << EOF
+/var/log/apt-security-updates {
+        rotate 2
+        weekly
+        size 250k
+        compress
+        notifempty
+}
+EOF
+\end{verbatim}
+\selectlanguage{greek}
+Η παραπάνω ρύθμιση εγκαθιστά τις ενημερώσεις ασφαλείας σε εβδομαδιαία βάση και εφαρμόζει \textlatin{logrotation}, κάθε εβδομάδα ή αν το αρχείο καταγραφής είναι μεγαλύτερο από \textlatin{250kB} (βλ.~\ref{logrotate}), συμπιέζοντας τα παλαιότερα (\textlatin{compress}). Τα δυο νεότερα αρχεία καταγραφής διατηρούνται (\textlatin{rotate 2}) και δε πραγματοποιείται \textlatin{logrotation} αν το αρχείο είναι άδειο (\textlatin{notifempty}).
+
+\subsection{Ενεργοποίηση του \textlatin{AppArmor}}
+Επιπρόσθετες ρυθμίσεις ασφαλείας για το \textlatin{Ubuntu}. Το \textlatin{AppArmor} είναι ένα πολύ χρήσιμο εργαλείο για τη μείωση του πλήθους του λογισμικού, που μπορεί να γίνει στόχος επίθεσης, όπως οι εξυπηρετητές ιστοσελίδων και άλλες υπηρεσίες~\cite{Ubu:02}. Οι προστατευμένες διεργασίες περιορίζονται με τη χρήση προφίλ. Είναι δυνατή η χρήση επιπλέον προφίλ με την εγκατάσταση του πακέτου \textlatin{apparmor-profiles}.
+\selectlanguage{english}
+\begin{verbatim}
+~]# apt-get install apparmor-profiles
+\end{verbatim}
+\selectlanguage{greek}
+Τα προφίλ αποθηκεύονται στο φάκελο \textlatin{\texttt/etc/apparmor.d}
+\vspace{1ex}\\
+Το \textlatin{AppArmor} έχει δυο τρόπους λειτουργίας:
+\begin{itemize}
+\item \textlatin{Enforce} - Όλοι οι κανόνες των προφίλ επιβάλλονται και όλες οι μη επιτρεπτές ενέργειες καταγράφονται στο \textlatin{syslog}.
+\item \textlatin{Complain} – Όλες οι ενέργειες καταγράφονται χωρίς να περιορίζονται.
+\end{itemize}
+Μπορούμε να εμφανίζουμε τον τρόπο λειτουργίας του \textlatin{AppArmor} ως εξής:
+\selectlanguage{english}
+\begin{verbatim}
+~]# apparmor_status
+\end{verbatim}
+\selectlanguage{greek}
+Για να αλλάξουμε τον τρόπο λειτουργίας (π.χ. \textlatin{mysqld}):
+\selectlanguage{english}
+\begin{verbatim}
+~]# apt-get install apparmor-utils
+~]# aa-enforce /usr/sbin/mysqld
+\end{verbatim}
+\selectlanguage{greek}
+ή να ρυθμίσουμε το \textlatin{AppArmor} ώστε να μόνο να εμφανίζει μηνύματα, χωρίς να εφαρμόζει τους περιορισμούς:
+\selectlanguage{english}
+\begin{verbatim}
+~]# aa-complain /usr/sbin/mysqld
+\end{verbatim}
+\selectlanguage{greek}
+Για να φορτώσουμε ένα προφίλ στον πυρήνα του ΛΣ:
+\selectlanguage{english}
+\begin{verbatim}
+~]# cat /etc/apparmor.d/profile.name | sudo apparmor_parser -a
+\end{verbatim}
+\selectlanguage{greek}
+Για να ενεργοποιήσουμε ένα προφίλ για μια εφαρμογή (π.χ. \textlatin{firefox}):
+\selectlanguage{english}
+\begin{verbatim}
+~]# rm /etc/apparmor.d/disable/usr.bin.firefox
+~]# cat /etc/apparmor.d/usr.bin.firefox | sudo apparmor_parser -a
+\end{verbatim}
+\selectlanguage{greek}
+Για να απενεργοποιήσουμε το παραπάνω προφίλ, αν δημιουργεί προβλήματα:
+\selectlanguage{english}
+\begin{verbatim}
+~]# ln -s /etc/apparmor.d/usr.bin.firefox /etc/apparmor.d/disable/
+~]# apparmor_parser -R /etc/apparmor.d/usr.bin.firefox
+\end{verbatim}
+\selectlanguage{greek}
+
+\subsection{Απεγκατάσταση Διαχειριστών Παραθύρων}
+Συνίσταται η απεγκατάσταση του συστήματος παραθύρων \textlatin{X}, των διαχειριστών παραθύρων και του συνοδευτικού λογισμικού \textbf{σε παραγωγικούς εξυπηρετητές}, καθώς επιβαρύνουν το σύστημα με άχρηστα πακέτα και εγείρουν ζητήματα ασφαλείας.
+\selectlanguage{english}
+\begin{verbatim}
+~]# apt-get remove x-window-system-core
+~]# apt-get autoremove --purge
+\end{verbatim}
+\selectlanguage{greek}
+
+\subsection{Απενεργοποίηση Οδηγών και Προσαρτημάτων Πυρήνα}
+Προσαρτήματα πυρήνα και οδηγοί συσκευών οι οποίες δε χρησιμοποιούνται, θα πρέπει να είναι απενεργοποιημένες~\cite{Arr:01}.
+\selectlanguage{english}
+\begin{verbatim}
+~]# echo "install bluetooth /bin/true" > /etc/modprobe.d/disablemod.conf
+~]# echo "install firewire-core /bin/true" >> /etc/modprobe.d/
+disablemod.conf
+~]# echo "install net-pf-31 /bin/true" >> /etc/modprobe.d/disablemod.conf
+~]# echo "install soundcore /bin/true" >> /etc/modprobe.d/disablemod.conf
+~]# echo "install thunderbolt /bin/true" >> /etc/modprobe.d/
+disablemod.conf
+~]# echo "install usb-midi /bin/true" >> /etc/modprobe.d/disablemod.conf
+~]# echo "install usb-storage /bin/true" >> /etc/modprobe.d/
+disablemod.conf
+\end{verbatim}
+\selectlanguage{greek}
+
+\subsection{Απενεργοποίηση μη Χρησιμοποιούμενων Συστημάτων Αρχείων}
+Συστήματα αρχείων τα οποία δε χρησιμοποιούνται από το ΛΣ για τις ανάγκες λειτουργίας του, θα πρέπει να απενεργοποιούνται για λόγους ασφαλείας~\cite{Arr:01}.
+\selectlanguage{english}
+\begin{verbatim}
+~]# echo "install cramfs /bin/true" > /etc/modprobe.d/disablemnt.conf
+~]# echo "install freevxfs /bin/true" >> /etc/modprobe.d/disablemnt.conf
+~]# echo "install jffs2 /bin/true" >> /etc/modprobe.d/disablemnt.conf
+~]# echo "install hfs /bin/true" >> /etc/modprobe.d/disablemnt.conf
+~]# echo "install hfsplus /bin/true" >> /etc/modprobe.d/disablemnt.conf
+~]# echo "install squashfs /bin/true" >> /etc/modprobe.d/disablemnt.conf
+~]# echo "install udf /bin/true" >> /etc/modprobe.d/disablemnt.conf
+~]# echo "install vfat /bin/true" >> /etc/modprobe.d/disablemnt.conf
+\end{verbatim}
+\selectlanguage{greek}
+
+\subsection{Απενεργοποίηση εν Δυνάμει Ανασφαλών Δικτυακών Πρωτοκόλλων}
+Δικτυακά πρωτόκολλα, τα οποία δεν είναι κοινώς διαδεδομένη η χρήση τους και δε χρησιμοποιούνται από το ΛΣ για την εκτέλεση των λειτουργιών του, θα πρέπει να απενεργοποιούνται~\cite{Arr:01}.
+\selectlanguage{english}
+\begin{verbatim}
+~]# echo "install dccp /bin/true" >> /etc/modprobe.d/disablenet.conf
+~]# echo "install sctp /bin/true" >> /etc/modprobe.d/disablenet.conf
+~]# echo "install rds /bin/true" >> /etc/modprobe.d/disablenet.conf
+~]# echo "install tipc /bin/true" >> /etc/modprobe.d/disablenet.conf
+\end{verbatim}
+\selectlanguage{greek}
+
+\subsection{Έλεγχος αν το \textlatin{Apport} είναι Απενεργοποιημένο}
+Το \textlatin{Apport} είναι ένα σύστημα το οποίο επεμβαίνει όταν ένα λογισμικό καταρρέει και συλλέγει πολύτιμες πληροφορίες για το συμβάν και το ΛΣ, ενώ αποστέλλει στους προγραμματιστές του εγκατεστημένου λογισμικού πληροφορίες για τα πακέτα, την έκδοση του ΛΣ κτλ. Το \textlatin{Apport} είναι απενεργοποιημένο στις σταθερές εκδόσεις, ακόμα και αν είναι εγκατεστημένο και αυτό συμβαίνει για διάφορους λόγους:
+\begin{itemize}
+\item Το \textlatin{Apport} συλλέγει δυνητικά ευαίσθητες πληροφορίες όπως αποτυπώσεις πυρήνα, περιεχόμενα στοίβας μνήμης συστήματος και αρχεία καταγραφών. Στις παραπάνω πληροφορίες μπορεί να περιέχονται κωδικοί πρόσβασης, αριθμοί πιστωτικών καρτών, σειριακοί αριθμοί και άλλα προσωπικά δεδομένα.
+\item Η διαδικασία συλλογής δεδομένων από το \textlatin{AppPort} απαιτεί αρκετούς πόρους από τον επεξεργαστή και τις \textlatin{I/O} συσκευές, πράγμα το οποίο επιβραδύνει το ΛΣ και δεν επιτρέπει στο χρήστη να επανεκκινήσει το καταρευθέν λογισμικό για αρκετά δευτερόλεπτα.
+\end{itemize}
+Η απενεργοποίηση του \textlatin{AppPort} γίνεται ως εξής:
+\selectlanguage{english}
+\begin{verbatim}
+~]# sed -i 's/enabled=.*/enabled=0/' /etc/default/apport
+~]# systemctl mask apport.service
+\end{verbatim}
+\selectlanguage{greek}
+
+\subsection{Απενεργοποίηση Αποτυπωμάτων ΛΣ}
+Τα αποτυπώματα του ΛΣ (\textlatin{coredumps}) είναι δυνητικά μια σοβαρή διαρροή πληροφοριών, καθώς μπορεί να περιέχουν κωδικούς πρόσβασης και άλλα ευαίσθητα δεδομένα. Συνίσταται λοιπόν η απενεργοποίησή του σε παραγωγικούς εξυπηρετητές, εάν δεν είναι αναγκαίο για την αποσφαλμάτωση. Η απενεργοποίηση λήψεων αποτυπωμάτων γίνεται ως εξής:
+\selectlanguage{english}
+\begin{verbatim}
+~]# sed -i 's/^#Storage=.*/Storage=none/' /etc/systemd/coredump.conf
+~]# systemctl restart systemd-journald
+\end{verbatim}
+\selectlanguage{greek}
+
+\subsection{Απενεργοποίηση \textlatin{Cronjobs} για τους Χρήστες}
+Ο χρονοπρογραμματιστής \textlatin{Cron} έχει ενσωματωμένο τρόπο ελέγχου για το ποιος επιτρέπεται και ποιος οχι, να χρονοπρογραμματίσει εργασίες στο ΛΣ. Ο έλεγχος ρυθμίζεται μέσω των αρχείων \textlatin{\texttt{/etc/cron.allow}} και \textlatin{\texttt{/etc/cron.deny}}. Για να αποκλειστεί ένας χρήστης από τη χρήση του \textlatin{cron}, θα πρέπει το \textlatin{username} του να εισαχθεί στο αρχείο \textlatin{\texttt{cron.deny}}. Αντίστοιχα, για να επιτραπεί σε ένα χρήστη η χρήση του \textlatin{cron}, θα πρέπει να γίνει η αντίστοιχη καταχώρηση στο αρχείο \textlatin{\texttt{cron.allow}}. Αν επιθυμούμε να απενεργοποιήσουμε το \textlatin{cron} για όλους τους χρήστες (πλην \textlatin{root}), προσθέτουμε τη γραμμή \textlatin{'ALL'} στο αρχείο \textlatin{\texttt{cron.deny}}~\cite{Sai:01}.
+\selectlanguage{english}
+\begin{verbatim}
+~]# echo ALL > /etc/cron.deny
+\end{verbatim}
+\selectlanguage{greek}
+
+\subsection{Ρύθμιση των Ορίων Ασφαλείας των Χρηστών}
+Είναι μια καλή πρακτική η ρύθμιση ορίων ασφαλείας, όσον αφορά την πρόσβαση των χρηστών στους παραγωγικούς εξυπηρετητές. Τα όρια αυτά περιλαμβάνουν μέγιστο αριθμό ταυτόχρονων συνεδριών (\textlatin{max-logins}), μέγιστο πλήθος εκτελούμενων διεργασιών, μέγεθος αρχείου \textlatin{coredump} κ.α. Για τη ρύθμιση των ορίων αυτών στο σύστημα, εκτελούμε:
+\selectlanguage{english}
+\begin{verbatim}
+~]# sed -i 's/^# End of file*//' /etc/security/limits.conf
+~]# echo "* hard maxlogins 10" >> /etc/security/limits.conf
+~]# echo "* hard core 0" >> /etc/security/limits.conf
+~]# echo "* soft nproc 100" >> /etc/security/limits.conf
+~]# echo "* hard nproc 150" >> /etc/security/limits.conf
+~]# echo "# End of file" >> /etc/security/limits.conf
+\end{verbatim}
+\selectlanguage{greek}
+
+\subsection{Αφαίρεση \textlatin{suid} από Συγκεκριμένα Αρχεία}
+Συνίσταται η αφαίρεση του \textlatin{suid bit} από συγκεκριμένα εκτελέσιμα αρχεία που βρίσκονται στους φακέλους \textlatin{\texttt{/bin}} και \textlatin{\texttt{/usr/bin}}, καθώς αυτά τα αρχεία εκτελούνται με δικαιώματα υπερχρήστη \textlatin{'root'} ή με τα δικαιώματα της υπερομάδας \textlatin{'sudo'} (ή ακόμα ως ένας άλλος χρήστης ή ομάδα). Αρχικά, μπορούμε να βρούμε ποια αρχεία έχουν ενεργό το \textlatin{SUID} και έπειτα να απενεργοποιήσουμε επιλεκτικά αυτά που θεωρούμε επικίνδυνα. (παράδειγμα για το \textlatin{\texttt{/bin/su}}):
+\selectlanguage{english}
+\begin{verbatim}
+~]# find / -perm -4000 -print
+~]# chmod -s /bin/su
+\end{verbatim}
+\selectlanguage{greek}
+
+\subsection{Εφαρμογή Αυστηρότερων Δικαιωμάτων σε Αρχεία - Φακέλους}
+Για να θέσετε αυστηρότερα δικαιώματα σε νέα αρχεία και φακέλους, ρυθμίστε το συνολικό \textlatin{umask} του συστήματος σε 027. Αυτό ορίζει τα δικαιώματα σε 640 (\textlatin{\texttt{rw-r---}}) σε νέα αρχεία και 750 (\textlatin{\texttt{rwxr-x---}}) σε νέους φακέλους:
+\selectlanguage{english}
+\begin{verbatim}
+~]# sed -i 's/umask 022/umask 027/g' /etc/init.d/rc
+~]# echo "umask 027" >> /etc/profile
+~]# echo "umask 027" >> /etc/bash.bashrc
+\end{verbatim}
+\selectlanguage{greek}
+Συνίσταται ο ορισμός του \textlatin{umask} σε 077 σε εξυπηρετητές αρχείων, καθώς λάθος δικαιώματα μπορεί να προκαλέσουν προβλήματα σε συστήματα τα οποία διαμοιράζουν αρχεία (\textlatin{SAMBA} ή \textlatin{NFS}).
+
+\subsection{Καθορισμός \textlatin{DNS} Εξυπηρετητών}
+Είναι απαραίτητο οι απαντήσεις \textlatin{DNS} να μην αλλοιώνονται με κανένα τρόπο για την αποφυγή \textlatin{MITM} και άλλων τύπων επιθέσεων και κινδύνων ασφαλείας. Η ασφάλιση του \textlatin{DNS} ρυθμίζεται ενημερώνοντας το αρχείο \textlatin{\texttt{/etc/systemd/resolved.conf}} όπως παρακάτω:
+\selectlanguage{english}
+\begin{verbatim}
+[Resolve]
+DNS="YOUR PRIMARY DNS"
+FallbackDNS=8.8.8.8 8.8.4.4
+#Domains=
+#LLMNR=yes
+DNSSEC=allow-downgrade
+\end{verbatim}
+\selectlanguage{greek}
+Είναι επίσης καλή πρακτική η ενεργοποίηση του \textlatin{DNSSEC} στους εξηπηρετητές \textlatin{DNS}, όπως περιγράφεται στο τμήμα~\ref{dnssec}.
+
+\subsection{Αφαίρεση Ρυθμίσεων Απομακρυσμένης Πρόσβασης}
+Η αφαίρεση των \textlatin{\texttt{.rhosts}} και \textlatin{\texttt{hosts.equiv}} τους φακέλους χρηστών, συμβάλουν στην ασφάλεια ενός συστήματος \textlatin{Linux}. Αυτό γίνεται ως εξής:
+\selectlanguage{english}
+\begin{verbatim}
+~]# for dir in $(awk -F ":" '{print $6}' /etc/passwd); do
+    find "$dir" \( -name "hosts.equiv" -o -name ".rhosts" \) \
+    -exec rm -f {} \; 2> /dev/null
+done
+    
+~]# if [[ -f /etc/hosts.equiv ]]; then
+    rm /etc/hosts.equiv
+fi
+\end{verbatim}
+\selectlanguage{greek}
+
+\subsection{Έλεγχος Πρόσβασης με το \textlatin{TCP Wrappers}}\label{tcpwrappers}
+Τα αρχεία \textlatin{\texttt{/etc/hosts.allow}} και \textlatin{\texttt{/etc/hosts.deny}} χρησιμοποιούνται για τον έλεγχο της πρόσβασης στις υπηρεσίες του ΛΣ. Αν χρησιμοποιείτε μια έκδοση χρήστη (\textlatin{desktop}) και όχι εξυπηρετητή, τότε είναι καλό να προσθέσετε τη γραμμή \textlatin{'ALL'} στο αρχείο \textlatin{\texttt{/etc/\\hosts.deny}} και τη γραμμή \textlatin{'localhost'} στο αρχείο \textlatin{\texttt{/etc/hosts.allow}}. Μια εγκατάσταση εξυπηρετητή συνήθως χρειάζεται και επιπρόσθετες γραμμές στο αρχείο \textlatin{\texttt{/etc/hosts.allow}}. Οι παραπάνω ρυθμίσεις εισάγονται ως εξής:
+\selectlanguage{english}
+\begin{verbatim}
+~]# echo "ALL: LOCAL, 127.0.0.1" >> /etc/hosts.allow
+~]# echo "ALL: PARANOID" > /etc/hosts.deny
+\end{verbatim}
+\selectlanguage{greek}
+
+\subsection{Ρύθμιση των \textlatin{Banners}}
+Η ρύθμιση \textlatin{Banners} (μηνυμάτων εισόδου) είναι πιο πολύ μια αισθητική παρέμβασή παρά μια ρύθμιση ασφαλείας, αλλά προειδοποιεί τους πιθανούς εισβολείς οτι το σύστημα παρακολουθείται και είναι ασφαλές. Ο καθορισμός των \textlatin{Banners} γίνεται με τη χρήση των αρχείων: \textlatin{\texttt{/etc/issue, /etc/motd, /etc/issue.net}}.
+
+\subsection{Αφαίρεση μη Αναγκαιούντων Χρηστών}
+Η αφαίρεση χρηστών που είναι ανενεργοί ή αντιστοιχούν σε υπηρεσίες που δεν χρησιμοποιούνται, μειώνουν τις πιθανότητες παραβίασης του συστήματος:
+\selectlanguage{english}
+\begin{verbatim}
+~]# userdel -r username
+\end{verbatim}
+\selectlanguage{greek}
+
+\subsection{Δημιουργία Νέων Χρηστών με Ανενεργό \textlatin{shell}}
+Συνίσταται η δημιουργία των νέων χρηστών με εξ΄ ορισμού \textlatin{shell} το \textlatin{\texttt{/bin/false}}, για να αποτρέψει πιθανούς εισβολείς να αποκτήσουν πρόσβαση στην γραμμή εντολών με αυτοματοποιημένα εργαλεία. Οι παραπάνω ρυθμίζεις ορίζονται στα αρχεία \textlatin{\texttt{/etc/adduser.conf}} και \textlatin{\texttt{/etc/useradd.conf}}:
+\selectlanguage{english}
+\begin{verbatim}
+DSHELL=/bin/false
+\end{verbatim}
+\selectlanguage{greek}
+
+\subsection{Ασφάλιση του \textlatin{NTP}}
+Είναι απαραίτητο η ώρα του συστήματος να είναι ακριβής ανα πάσα στιγμή. Κρίσιμες υπηρεσίες, οι οποίες απαιτούν ακριβή ώρα και ημερομηνία περιλαμβάνουν την καταγραφή του ΛΣ, το μηχανισμό εισόδου χρηστών, το χρονοπρογραμματισμό εργασιών, τις υπηρεσίες κρυπτογράφησης (επαλήθευση πιστοποιητικών). Για τη διατήρηση ακριβούς ημερομηνίας και ώρας απαιτείται μια ακριβής πηγή. Σε παραγωγικούς εξυπηρετητές μπορούν να χρησιμοποιηθούν πηγές οδηγούμενες από \textlatin{GPS} ή ακόμα και έμπιστοι διακομιστές ώρας (\textlatin{NTP}). H ρύθμιση του πελάτη \textlatin{NTP} γίνεται με την ενημέρωση του αρχείου \textlatin{\texttt{/etc/systemd/timesyncd.conf}} ως εξής:
+\selectlanguage{english}
+\begin{verbatim}
+[Time]
+NTP=3.ubuntu.pool.ntp.org pool.ntp.org
+FallbackNTP=0.ubuntu.pool.ntp.org 1.ubuntu.pool.ntp.org
+\end{verbatim}
+\selectlanguage{greek}
+
+\subsection{Ρύθμιση του \textlatin{logrotate}}\label{logrotate}
+Εάν έχετε ενεργοποιημένη την λειτουργία καταγραφής στο σύστημά σας, τότε τα αρχεία καταγραφής θα συνεχίζουν να αυξάνουν σε μέγεθος μέχρι του σημείου που ο φάκελος \textlatin{\texttt{/var/log}} γεμίζει και το ΛΣ καθίσταται ασταθές. Στην περίπτωση που το \textlatin{\texttt{/var}} δεν είναι σε ξεχωριστό τόμο, το ΛΣ μπορεί να γίνει μη αποκρίσιμο. Πιθανές λύσεις του προβλήματος είναι η αποστολή των καταγραφών του ΛΣ σε ένα κεντρικό σύστημα καταγραφής, όπως το \textlatin{splunk} (βλ. τμ.~\ref{splunk}) και η ενεργοποίηση της ανακύκλωσης των αρχείων καταγραφής (\textlatin{logrotate}). Η ανακύκλωση των αρχείων καταγραφής αποτρέπει την κατάληψη όλου του διαθέσιμου χώρου, κρατώντας ιστορικό μόνο των πιο πρόσφατων συμβάντων, βάσει συγκεκριμένων κανόνων. Η ενεργοποίηση της παραπάνω λειτουργίας γίνεται μέσω του αρχείου \textlatin{\texttt{/etc/logrotate.conf}}. Στο σενάριο γραμμής εντολών (\textlatin{bash script}), το οποίο επισυνάπτεται στην παρούσα εργασία (βλ. Κεφ.~\ref{script}), το ΛΣ είναι προγραμματισμένο να ανακυκλώνει τα αρχεία καταγραφής κάθε μέρα.
+
+\subsection{Απενεργοποίηση του Συνδυασμού \textlatin{Ctrl+Alt+Delete}}
+Στις πρόσφατες εκδόσεις του ΛΣ \textlatin{Linux} ο συνδυασμός πλήκτρων \textlatin{CTRL-ALT-DEL} επαννεκινεί το σύστημα. Αυτό δεν είναι ιδιαίτερα επιθυμητό στους παραγωγικούς διακομιστές, καθώς ο συνδυασμός είναι δυνατό να ενεργοποιηθεί κατά λάθος. Η απενεργοποίηση της παραπάνω λειτουργίας γίνεται ως εξής~\cite{Ubu:02}:
+\selectlanguage{english}
+\begin{verbatim}
+~]# sudo systemctl mask ctrl-alt-del.target
+~]# sudo systemctl daemon-reload
+\end{verbatim}
+\selectlanguage{greek}
+Εάν θέλουμε το ΛΣ να μη παρεμβάλει τον παραπάνω συνδυασμό πλήκτρων αλλά απλώς να καταγράφει το συμβάν, τότε ενημερώνουμε το αρχείο \textlatin{\texttt{/etc/init/control-alt-delete\\.conf}} αλλάζοντας την αντίστοιχη γραμμή~\cite{Arr:01}:
+\selectlanguage{english}
+\begin{verbatim}
+exec /sbin/shutdown -r now "Control-Alt-Delete pressed"
+\end{verbatim}
+\selectlanguage{greek}
+σε
+\selectlanguage{english}
+\begin{verbatim}
+exec /usr/bin/logger -p security.info "Control-Alt-Delete pressed"
+\end{verbatim}
+\selectlanguage{greek}
+
+\section{Ασφάλεια Λογαριασμών}
+
+\subsection{Δημιουργία Ασφαλών Κωδικών Χρήστη}
+Για λόγους ασφαλείας το σύστημα είναι ρυθμισμένο να χρησιμοποιεί \textlatin{SHA512} και \textlatin{shadow passwords}. Συνίσταται ιδιαίτερα να μην αλλάζουν αυτές οι ρυθμίσεις. Κατά την δημιουργία ασφαλών κωδικών, ο χρήστης θα πρέπει να έχει υπόψη του ότι οι μακροσκελείς κωδικοί είναι πιο ασφαλείς από τους κωδικούς με λίγους χαρακτήρες, ακόμα και αν αυτοί περιέχουν τους λεγόμενους ειδικούς χαρακτήρες. Δεν είναι, λοιπόν, καλή πρακτική η δημιουργία ενός κωδικού χρήστη με μόνο οκτώ χαρακτήρες, ακόμα και αν αυτός περιέχει αριθμούς, ειδικούς ή κεφαλαιους χαρακτήρες. Εργαλεία παραβίασης κωδικών, όπως το \textlatin{John The Ripper} είναι ρυθμισμένα ώστε να παραβιάζουν τέτοιυς ακριβώς κωδικούς, ενώ παράλληλα, τέτοιοι κωδικοί είναι δύσκολο να απομνημονευτούν.
+
+Το \textlatin{pwmake} είναι ένα εργαλείο γραμμής εντολών το οποίο παράγει κωδικούς χρήστη, που αποτελούνται από μικρά - κεφαλαία, αριθμούς και ειδικούς χαρακτήρες.
+\selectlanguage{english}
+\begin{verbatim}
+~]# apt-get install libpwquality-tools
+~]# pwmake --help
+\end{verbatim}
+\selectlanguage{greek}
+
+\subsection{Επιβολή Ισχυρών Κωδικών ασφαλείας}
+Το \textlatin{\texttt{pam\_cracklib}} χρησιμοποιείται για να ελέγξει την ισχύ ενός κωδικού πρόσβασης, σύμφωνα με προδιαγεγραμμένους κανόνες~\cite{Red:01}. Για την ενεργοποίηση του \textlatin{\texttt{pam\_cracklib}} και την αποτροπή των χρηστών από τη χρήση μικρών ή απλών κωδικών πρόσβασης, προσθέτουμε την παρακάτω γραμμή στο αρχείο \textlatin{\texttt{/etc/pam.d/common-password}}:
+\selectlanguage{english}
+\begin{verbatim}
+password required pam_cracklib.so retry=3 maxrepeat=3 minlen=15 
+dcredit=-1 ucredit=-1 ocredit=-1 lcredit=-1 difok=8
+\end{verbatim}
+\selectlanguage{greek}
+
+Ο έλεγχος των λογαριασμών για κενούς κωδικούς, είναι επίσης μια καλή πρακτική~\cite{San:01}. Κάθε λογαριασμός, ο οποίος δεν έχει κωδικό πρόσβασης είναι μια απειλή ασφαλείας, καθώς εκθέτει το σύστημα σε μη εξουσιοδοτημένη πρόσβαση. Ο έλεγχος των λογαριασμών για κενούς κωδικούς ασφαλείας, γίνεται ως εξής:
+\selectlanguage{english}
+\begin{verbatim}
+~]# cat /etc/shadow | awk -F: '($2==""){print $1}'
+\end{verbatim}
+\selectlanguage{greek}
+Ο διαχειριστής θα πρέπει επίσης να περιορίζει την επαναχρησιμοποίηση παλιών κωδικών από τους χρήστες. Ο περιορισμός τίθεται ως εξής:
+Τροποποιούμε το αρχείο \textlatin{\texttt{/etc/pam.d/\\common-password}}:
+\selectlanguage{english}
+\begin{verbatim}
+~]# vi /etc/pam.d/common-password
+\end{verbatim}
+\selectlanguage{greek}
+Προσθέστε την παρακάτω γραμμή για να απαγορεύσετε στους χρήστες την επαναχρησιμοποίηση των 5 τελευταίων κωδικών πρόσβασης.
+\selectlanguage{english}
+\begin{verbatim}
+password [success=1 default=ignore] pam_unix.so obscure use_authtok 
+try_first_pass sha512 remember=5
+\end{verbatim}
+\selectlanguage{greek}
+Με αυτό τον τρόπο, το ΛΣ αποθηκεύει τους 5 τελευταίους κωδικούς πρόσβασης. Εάν κάποιος επιχειρήσει να ξαναχρησιμοποιήσει κάποιον από αυτούς τους κωδικούς, τότε θα λάβει το παρακάτω μήνυμα:
+\selectlanguage{english}
+\begin{verbatim}
+Password has been already used. Choose another.
+\end{verbatim}
+\selectlanguage{greek}
+
+\subsection{Πολιτική Λήξης Λογαριασμών και Κωδικών}
+Είναι απαραίτητο για τον διαχειριστή συστημάτων να εφαρμόζει την πολιτική λήξης των κωδικών και των λογαριασμών στο σύστημα. Οι ρυθμίσεις αυτές ορίζονται στο αρχείο \textlatin{\texttt{/etc/login.defs}} όπως παρακάτω:
+\selectlanguage{english}
+\begin{verbatim}
+LOG_OK_LOGINS yes
+PASS_MIN_DAYS 7
+PASS_MAX_DAYS 30
+\end{verbatim}
+\selectlanguage{greek}
+Οι παραπάνω γραμμές καταγράφουν τις επιτυχείς εισόδους στο σύστημα, απαγορεύουν δυο διαδοχικές αλλαγές κωδικών πρόσβασης, για ένα λογαριασμό, μέσα σε 7 ημέρες και λήγουν την ισχύ των κωδικών κάθε 30 ημέρες. Για την απενεργοποίηση ενός λογαριασμού, ο οποίος δεν έχει χρησιμοποιηθεί 35 μέρες μετά από τη λήξη του κωδικού πρόσβασης, ενημερώνουμε το αρχείο \textlatin{\texttt{/etc/default/useradd}}:
+\selectlanguage{english}
+\begin{verbatim}
+INACTIVE=35
+\end{verbatim}
+\selectlanguage{greek}
+
+\subsection{Κλείδωμα Λογαριασμών}
+Στο \textlatin{Ubuntu 16.04LTS}, το \textlatin{PAM module \texttt{pam\_tally}} επιτρέπει στο διαχειριστή συστήματος να κλειδώνει τους λογαριασμούς των χρηστών, μετά από ένα καθορισμένο αριθμό αποτυχημένων προσπαθειών. Ο περιορισμός των προσπαθειών εισόδου των χρηστών είναι ένα μέτρο ασφαλείας το οποίο αποτρέπει τις επιθέσεις τύπου \textlatin{brute force}, οι οποίες στοχεύουν στην ανάκτηση του κωδικού πρόσβασης ενός χρήστη~\cite{Red:01}.
+Το άρθρωμα \textlatin{\texttt{pam\_tally}}, αποθηκεύει τις αποτυχημένες προσπάθειες στο αρχείο \textlatin{\texttt{/var/log/faillog}}.
+
+Για να κλειδώνεται ένας χρήστης μετά από πέντε αποτυχημένες προσπάθειες και να ξεκλειδώνεται αυτόματα μετά από 15 λεπτά, προσθέστε την παρακάτω γραμμή στο αρχείο \textlatin{\texttt{/etc/pam.d/common-auth}}:
+\selectlanguage{english}
+\begin{verbatim}
+auth required pam_tally.so file=/var/log/faillog deny=5 unlock_time=900
+\end{verbatim}
+\selectlanguage{greek}
+Και την παρακάτω γραμμή στο αρχείο \textlatin{\texttt{etc/pam.d/common-account}}:
+\selectlanguage{english}
+\begin{verbatim}
+account required pam_tally.so reset
+\end{verbatim}
+\selectlanguage{greek}
+Για να εφαρμόσετε μια ελάχιστη αναμονή 4 δευτ. στην περίπτωση μιας αποτυχημένης προσπάθειας εισόδου στο σύστημα, προσθέστε την επόμενη γραμμή στο αρχείο \textlatin{\texttt{/etc/pam.d/\\login}}:
+\selectlanguage{english}
+\begin{verbatim}
+auth optional pam_faildelay.so delay=4000000
+\end{verbatim}
+\selectlanguage{greek}
+
+\subsection{Κλείδωμα Συνεδρίας – Αυτόματη Αποσύνδεση}
+Όταν ένας χρήστης είναι συνδεδεμένος ώς \textlatin{root}, μία μη επιτηρούμενη συνεδρία, μπορεί να αποτελέσει σημαντικό κίνδυνο ασφαλείας. Για να μειώσουμε αυτό τον κίνδυνο, μπορούμε να ρυθμίσουμε το σύστημα, ώστε να αποσυνδέει αυτόματα τους χρήστες που δεν αλληλεπιδρούν με αυτό, μετά από ένα συγκεκριμένο χρονικό διάστημα. Για να το επιτύχουμε αυτό, ενημερώνουμε το αρχείο \textlatin{\texttt{/etc/systemd/logind.conf}} με τις παρακάτω γραμμές:
+\selectlanguage{english}
+\begin{verbatim}
+KillUserProcesses=1
+KillExcludeUsers=root
+IdleAction=lock
+IdleActionSec=15min
+RemoveIPC=yes
+\end{verbatim}
+\selectlanguage{greek}
+Οι παραπάνω ρυθμίσεις κλειδώνουν την συνεδρία μετά από 15 λεπτά μη αλληλεπίδρασης των χρηστών με το σύστημα και τερματίζει όλες τις τρέχουσες διεργασίες του χρήστη. Ο χρήστης \textlatin{root} εξαιρείται από τον αυτόματο τερματισμό των διεργασιών.
+
+Οι χρήστες μπορεί να χρειαστεί να εγκαταλείψουν το σταθμό εργασίας τους για διάφορους λόγους. Για να κλειδώσουν την κονσόλα της γραμμής εντολών, oι χρήστες μπορούν να χρησιμοποιήσουν ένα εργαλείο το οποίο ονομάζεται \textlatin{vlock}. Για να εγκαταστήσετε το παραπάνω εργαλείο, εκτελέστε τις παρακάτω εντολές ως χρήστης \textlatin{root}:
+\selectlanguage{english}
+\begin{verbatim}
+~]# apt-get install vlock
+\end{verbatim}
+\selectlanguage{greek}
+
+\subsection{Περιορισμός της Πρόσβασης \textlatin{root}}
+Αν ο διαχειριστής συστήματος δεν επιτρέπει στους χρήστες να εισέρχονται στο σύστημα, χρησιμοποιώντας τον υπερχρήστη \textlatin{root}, τότε ο κωδικός πρόσβασης του υπερχρήστη θα πρέπει να διατηρείται κρυφός και η πρόσβαση στο \textlatin{runlevel one} ή \textlatin{single user mode} θα πρέπει να απαγορεύεται με τη χρήση προστασίας κωδικού πρόσβασης στον \textlatin{boot loader} (όπως περιγράφεται στο τμήμα~\ref{secboot}).
+
+Για να αποτρέψει τους χρήστες να εισέρχονται στο σύστημα απευθείας ως υπερχρήστες, ο διαχειριστής συστήματος μπορεί να θέσει το \textlatin{shell} του χρήστη \textlatin{root} σε \textlatin{\texttt{/bin/\\false}} στο αρχείο \textlatin{\texttt{/etc/passwd}}. Λογισμικό το οποίο δεν απαιτεί \textlatin{shell}, όπως \textlatin{FTP, mail} πελάτες, και αρκετά \textlatin{setuid} προγράμματα, δεν λαμβάνουν υπόψη τους το παραπάνω περιορισμό.
+
+Για να περιοριστεί περαιτέρω την πρόσβαση των χρηστών στο λογαριασμό του υπερχρήστη, Ο διαχειριστής συστήματος μπορεί να απενεργοποιήσει την είσοδο των χρηστών στην κονσόλα γραμμής εντολών, τροποποιώντας το αρχείο \textlatin{\texttt{/etc/securetty}}. Αυτό το αρχείο περιγράφει όλες τις συσκευές μέσω των οποίων ο υπερχρήστης δύναται να εισέλθει στο σύστημα~\cite{Red:01}. Εάν το παραπάνω αρχείο δεν υπάρχει, τότε ο υπερχρήστης μπορεί να συνδεθεί στο σύστημα μέσω οποιασδήποτε συσκευής επικοινωνίας, είτε μέσω της κονσόλας (ακόμα και σειριακής), είτε μέσω οποιασδήποτε διεπαφής δικτύου. Αυτό είναι επικίνδυνο, διότι ένας χρήστης μπορεί να συνδεθεί στην μηχανή ως υπερχρήστης μέσω του πρωτοκόλλου \textlatin{telnet}, το οποίο διακινεί τους κωδικούς πρόσβασης ακρυπτογράφητους εντός του δικτύου:
+\selectlanguage{english}
+\begin{verbatim}
+~]# echo '' > /etc/securetty
+\end{verbatim}
+\selectlanguage{greek}
+
+Επίσης, συνιστάται η απενεργοποίηση του λογαριασμού του υπερχρήστη. Κατά αυτό τον τρόπο ένας πλαστογραφημένος χρήστης με \textlatin{UID} 0 δεν μπορεί να πάρει πρόσβαση στο σύστημα.
+\selectlanguage{english}
+\begin{verbatim}
+~]# usermod -L root
+\end{verbatim}
+\selectlanguage{greek}
+
+\section{Aπειλές για τις Υπηρεσίες}
+Οι δικτυακές υπηρεσίες μπορούν να αποτελέσουν κίνδυνο ασφαλείας για τα συστήματα \textlatin{Linux}. Παρακάτω περιγράφονται μερικά από τα πιο συχνά προβλήματα:
+
+\paragraph{Eπιθέσεις τύπου \textlatin{Denial of Service (DoS)}}
+Αυτός ο τύπος επίθεσης καθιστά το σύστημα μη απόκρισιμο βομβαρδίζοντας το με πλήθος αιτημάτων, τα οποία δεν είναι σε θέση να επεξεργαστεί.
+
+\paragraph{Επιθέσεις τύπου \textlatin{Distributed Denial of Service (DDoS)}}
+Αυτός ο τύπος επίθεσης χρησιμοποιεί πάρα πολλούς ηλεκτρονικούς υπολογιστές (αρκετές φορές μπορεί να φτάνουν σε πλήθος αρκετές χιλιάδες), στους οποίους έχει εγκατασταθεί κακόβουλο λογισμικό, ώστε να εξαπολύσουν μια κατευθυνόμενη επίθεση εναντίον ενός εξυπηρετητή, τον οποίο και βομβαρδίζουν με πλήθος αιτημάτων, τα οποία δεν μπορεί να επεξεργαστεί.
+
+\paragraph{Επιθέσεις που χρησιμοποιούν \textlatin{script}}
+Εάν ένας διακομιστής διαδικτύου (\textlatin{Web Server}) χρησιμοποιεί \textlatin{script} για να εκτελέσει διάφορες εργασίες, oπως συνήθως κάνουν οι διακομιστές διαδικτύου, ένας εισβολέας μπορεί να εκμεταλλευτεί τέτοια \textlatin{script} τα οποία δεν έχουν γραφτεί σωστά. Η επίθεση αυτού του τύπου μπορεί να προκαλέσει \textlatin{buffer overflow} ή να επιτρέψει σε έναν κακόβουλο χρήστη να αλλοιώσει αρχεία του συστήματος.
+
+\paragraph{Επιθέσεις \textlatin{Buffer Overflow}}
+Υπηρεσίες οι οποίες πρέπει να καταλαμβάνουν τις πόρτες από 1 έως 1023, είτε θα πρέπει να ξεκινούν με δικαιώματα υπερχρήστη είτε να έχει ρυθμιστεί για αυτές η δυνατότητα \textlatin{CAP\_NET\_BIND\_SERVICE}. Όταν μια διεργασία έχει ξεκινήσει, είτε τα δικαιώματα είτε η παραπάνω δυνατότητα καταργούνται. Εάν αυτό δε συμβεί, τότε η υπηρεσία είναι ευάλωτη σε επιθέσεις τύπου \textlatin{Buffer Overflow} και ο επιτιθέμενος μπορεί να λάβει πρόσβαση στο σύστημα, με το χρήστη ο οποίος τρέχει την υπηρεσία. Για το λόγο ότι, υπάρχουν αρκετές αδυναμίες ασφαλείας τύπου \textlatin{Buffer Overflow}, οι επιτιθέμενοι χρησιμοποιούν αυτοματοποιημένα εργαλεία για να ανιχνεύσουν συστήματα με αδυναμίες και μετά, εφόσον έχουν αποκτήσει πρόσβαση σε αυτά, εγκαθιστούν \textlatin{root-kits} ώστε να διατηρούν αυτή την πρόσβαση.
+
+Παραδείγματα υπηρεσιών οι οποίες είναι μη ασφαλείς περιλαμβάνουν τις \textlatin{rlogin, rsh, telnet, vsftpd}. Όλα τα μη ασφαλή προγράμματα απομακρυσμένης πρόσβασης θα πρέπει να αποφεύγονται και να χρησιμοποιείται το \textlatin{SSH} όπου είναι δυνατό. Το \textlatin{FTP} δεν είναι τόσο επικίνδυνο, για την ασφάλεια του συστήματος, όσο τα απομακρυσμένα \textlatin{shells}, όμως οι \textlatin{\textbf{FTP}} \textbf{εξυπηρετητές πρέπει να είναι προσεκτικά ρυθμισμένοι και να παρακολουθούνται αποτελεσματικά} για την αποφυγή προβλημάτων ασφαλείας. 
+
+Τέλος, οι παρακάτω υπηρεσίες πρέπει να ρυθμίζονται με μεγάλη προσοχή και να προστατεύονται πάντα από τείχος προστασίας:
+\selectlanguage{english}
+\begin{itemize}
+\item auth
+\item nfs-server
+\item smb and nbm
+\item yppasswdd
+\item ypserv
+\item ypxfrd
+\end{itemize}
+\selectlanguage{greek}
+
+\subsection{Ασφαλής ρύθμιση του \textlatin{NFS}}
+Το \textlatin{NFS} αποτελεί την πιο κοινή επιλογή για διαμοιρασμό αρχείων μεταξύ \textlatin{UNIX} διακομιστών. Η έκδοση \textlatin{NFS4} είναι η εξ΄ ορισμού εγκατεστημένη έκδοση στις πιο σύγχρονες διανομές \textlatin{Linux}. Αυτή η έκδοση θεωρείται ασφαλής, αλλά οι προηγούμενες εκδόσεις παρουσίαζαν κάποια κενά ασφαλείας. Παρακάτω περιγράφουμε πως μπορούμε να ασφαλίσουμε την εν λόγω υπηρεσία.
+
+\paragraph{Aσφάλιση του \textlatin{NFS - rpcbind} με \textlatin{TCP Wrappers}}
+Είναι αρκετά σημαντική η χρήση του \textlatin{TCP Wrappers} (βλ. τμ.~\ref{tcpwrappers}) για τον καθορισμό των δικτύων και των Η/Υ που μπορούν να έχουν πρόσβαση στην υπηρεσία \textlatin{rpcbind}, καθώς δεν παρέχει καμιά μορφή αυθεντικοποίησης. Η ασφαλής ρύθμιση του αφορά μόνο τις εκδόσεις \textlatin{v2} και \textlatin{v3}, καθώς η \textlatin{v4} δεν την χρησιμοποιεί για τη λειτουργία της. Αν σκοπεύετε να χρησιμοποιήσετε κάποια από τις παλαιότερες εκδόσεις, τότε το \textlatin{rpcbind} είναι απαραίτητο και το παρακάτω κείμενο βρίσκει εφαρμογή. Επίσης, είναι καλή πρακτική η χρήση μόνο \textlatin{IP} διευθύνσεων κατά τη ρύθμιση του \textlatin{rpcbind}, καθώς τα ονόματα \textlatin{DNS} είναι δυνατό να πλαστογραφηθούν (π.χ. \textlatin{DNS poisoning} κ.α.).
+
+\paragraph{Προστασία του \textlatin{rpcbind} και \textlatin{rpc.mountd} με το \textlatin{ufw}}
+Για τον περαιτέρω περιορισμό της πρόσβασης στην υπηρεσία \textlatin{rpcbind} είναι μια καλή ιδέα η προσθήκη κανόνων στο τείχος προστασίας του διακομιστή και ο περιορισμός της πρόσβασης για συγκεκριμένα δίκτυα. Από τους παρακάτω κανόνες του τείχους προστασίας, ο πρώτος επιτρέπει τις συνδέσεις \textlatin{TCP} στην πόρτα 111 (η οποία χρησιμοποιείται για την υπηρεσία \textlatin{rpcbind}) από το δίκτυο 192.168.1.0/24. Ο δεύτερος κανόνας επιτρέπει τις συνδέσεις στην ίδια πόρτα από τον \textlatin{localhost}. Όλα τα υπόλοιπα πακέτα απαγορεύονται.
+\selectlanguage{english}
+\begin{verbatim}
+~]# ufw allow proto tcp from 192.168.1.0/24 to any port 111
+~]# ufw allow proto tcp from 127.0.0.1 to any port 111
+\end{verbatim}
+\selectlanguage{greek}
+Κατά τον ίδιο τρόπο, για να περιοριστεί η κίνηση \textlatin{UDP} χρησιμοποιήστε τους παρακάτω κανόνες:
+\selectlanguage{english}
+\begin{verbatim}
+~]# ufw allow proto udp from 192.168.1.0/24 to any port 111
+\end{verbatim}
+\selectlanguage{greek}
+Στη συνέχεια, για να περιοριστεί η πρόσβασή στην υπηρεσία \textlatin{\texttt{rpc.mountd}}, προστίθενται κανόνες στο τείχος προστασίας \textlatin{ufw}, ώστε να περιοριστεί την πρόσβαση σε συγκεκριμένα δίκτυα. Παρακάτω παρατίθενται δυο παραδείγματα τέτοιων κανόνων. Ο πρώτος περιορίζει όλες τις συνδέσεις εκτός αυτών που προέρχονται από το δίκτυο 192.168.1.0/24. Ο δεύτερος κανόνας επιτρέπει τις συνδέσεις \textlatin{UDP} από τον \textlatin{localhost}:
+\selectlanguage{english}
+\begin{verbatim}
+~]# ufw allow from 192.168.1.0/24 to any port 32767
+~]# ufw allow proto tcp from 192.168.1.0/24 to any port 32767
+\end{verbatim}
+\selectlanguage{greek}
+Οι παραπάνω κανόνες έχουν ισχύ μόνο όταν η υπηρεσία \textlatin{\texttt{rpc.mountd}} δέχεται συνδέσεις στην πόρτα 32767. Αλλάξτε τους παραπάνω κανόνες αναλόγως, εάν οι εν λόγω υπηρεσία ακούσει διαφορετική πόρτα.
+
+\paragraph{Χρήση της αυθεντικοποίησης \textlatin{Kerberos}}
+Η έκδοση \textlatin{v4} χρησιμοποιεί εξ΄ ορισμού \textlatin{Kerberos} κωδικοποίηση ενώ οι εκδόσεις \textlatin{v2, v3} είναι δυνατόν να να ρυθμιστούν ώστε να την χρησιμοποιούν, πλην των υπηρεσιών κλειδώματος και προσάρτησης των απομακρυσμένων συστημάτων αρχείων.~\cite{Red:01}. Όπου είναι δυνατό, \textbf{εξάγετε μόνο ολόκληρους τόμους}. Η εξαγωγή ενός μόνο υποφακέλου του συστήματος αρχείων, μπορεί να θέσει ζητήματα ασφαλείας. Και αυτό διότι είναι δυνατόν, για ένα πρόγραμμα πελάτη να βγει εκτός του υποφακέλου που εξάγεται από το σύστημα και να έχει πρόσβαση σε αρχεία συστήματος. Για περισσότερες πληροφορίες δείτε την \textlatin{man page \texttt{exports(5)}}. Χρησιμοποιείστε όπου είναι δυνατόν την ρύθμιση μονό για ανάγνωση, όταν εξάγετε συστήματα αρχείων, για να περιορίσετε τη δυνατότητα των χρηστών να αλλοιώνουν τα δεδομένα. Η αυθεντικοποίηση \textlatin{Kerberos} ενεργοποιείται ως εξής:
+\selectlanguage{english}
+\begin{verbatim}
+~]# apt-get install krb5-user libpam-krb5
+\end{verbatim}
+\selectlanguage{greek}
+Στο αρχείο \textlatin{\texttt{/etc/default/nfs-kernel-server}} προσθέτουμε τη γραμμή:
+\selectlanguage{english}
+\begin{verbatim}
+NEED_SVCGSSD=yes
+\end{verbatim}
+\selectlanguage{greek}
+Για την εξαγωγή του υποφακέλου \textlatin{\texttt{/export/users}} στο υπoδίκτυο 192.198.1.0/24, προσθέτουμε την επόμενη γραμμή στο αρχείο \textlatin{\texttt{/etc/exports}}:
+\selectlanguage{english}
+\begin{verbatim}
+/export/users 192.168.1.0/24(rw,sync,no_subtree_check,sec=krb5,anonuid=
+65534,anongid=65534)
+\end{verbatim}
+\selectlanguage{greek}
+Η αυθεντικοποίηση \textlatin{Kerberos} μπορεί να λειτουργήσει με τρεις διαφορετικούς τρόπους, οι οποίοι μπορούν να ρυθμιστούν κατά την εξαγωγή ενός συστήματος αρχείων με το \textlatin{NFS}:
+\begin{itemize}
+\item \textlatin{\texttt{krb5}}: χρήση του \textlatin{Kerberos} μόνο για αυθεντικοποίηση.
+\item \textlatin{\texttt{krb5i}}: χρήση αυθεντικοποίησης \textlatin{Kerberos} τη χρήση ενός \textlatin{hash} για κάθε συναλλαγή, για την εξασφάλιση της ακεραιότητας. Η δικτυακή κίνηση μπορεί και πάλι να αλλοιωθεί αλλά οι αλλαγές θα είναι ανιχνεύσιμες.
+\item \textlatin{\texttt{krb5p}}: χρήση αυθεντικοποίησης \textlatin{Kerberos} και κρυπτογράφησης της δικτυακής κίνησης μεταξύ πελάτη και διακομιστή. Είναι η πιο ασφαλής ρύθμιση, αλλά παράγει και το μεγαλύτερο όγκο δικτυακής κίνησης.
+\end{itemize}
+Τέλος, στο αρχείο \textlatin{\texttt{/etc/krb5.keytab}} θα πρέπει να έχει δυνατότητα ανάγνωσης μόνο ο υπερχρήστης.
+
+Δεν είναι καλή πρακτική η χρήση της ρύθμισης \textlatin{\texttt{no\_root\_squash}} και καλό είναι να γίνεται έλεγχος και σε υπάρχοντες διακομιστές ώστε να είναι απενεργοποιημένη. Εξ΄ ορισμού το \textlatin{NFS} αλλάζει τον υπερχρήστη σε \textlatin{\texttt{nfsnobody}}, ένα απλό λογαριασμό χρήστη, μετά την ενεργοποίηση της υπηρεσίας. Αυτό έχει σαν αποτέλεσμα την αλλαγή του ιδιοκτήτη για όλα τα αρχεία που έχουν δημιουργηθεί από τον \textlatin{\texttt{root}} σε \textlatin{\texttt{nfsnobody}}, το οποίο απαγορεύει το ανέβασμα αρχείων με ενεργοποιημένο το \textlatin{setuid bit}. Εάν το \textlatin{\texttt{no\_root\_squash}} χρησιμοποιείται, τότε απομακρυσμένοι χρήστες είναι σε θέση να αλλάξουν κάθε αρχείο στο εξαγόμενο σύστημα αρχείων και να αφήσουν πίσω τους εφαρμογές και αρχεία τα οποία έχουν μολυνθεί με ιούς, δούρειους ίππους κ.α.
+
+Η ρύθμιση \textlatin{\texttt{secure}} χρησιμοποιείται από την πλευρά του διακομιστή κατά την εξαγωγή ενός συστήματος αρχείων, ώστε να περιορίσει τις πόρτες στις οποίες ακούει υπηρεσία, στις λεγόμενες δεσμευμένες (οι οποιές είναι αυτές που βρίσκονται κάτω από το 1024)~\cite{Ude:01}. Παλαιότερα, οι διακομιστές επέτρεπαν μόνο συνδέσεις από πελάτες σε αυτές τις πόρτες, καθόσον σε αυτές θεωρούνταν ότι εκτελούνταν έμπιστο λογισμικό. Όμως πολλές φορές δεν είναι δύσκολο για κάποιον να γίνει υπέρ χρήσης στο μηχάνημά του, οπότε είναι σπανίως ορθό για το διακομιστή να θεωρεί ότι δικτυακή κίνηση λογισμικού-πελάτη, η οποία προέρχεται από δεσμευμένη πόρτα, είναι ασφαλής. Για αυτό το λόγο ο περιορισμός της δικτυακής κίνησης, μόνο στις δεσμευμένες πόρτες, έχει πολύ μικρή χρηστική αξία και είναι καλύτερη λύση η χρήση της αυθεντικοποίησης \textlatin{Kerberos}, των τειχών προστασίας και ο περιορισμός των εξαγωγών του συστήματος αρχείων, μόνο σε συγκεκριμένους Η/Υ πελάτες.
+
+Είναι επίσης καλή πρακτική να μην επιτρέπεται στους χρήστες να αποκτούν πρόσβαση στο διακομιστή (μέσω γραμμής εντολών ή γραφικού περιβάλλοντος). Χρησιμοποιήστε τη ρύθμιση \textlatin{\texttt{nosuid}} για να μην επιτρέψετε την εκτέλεση ενός προγράμματος \textlatin{\texttt{setuid}}. Η ρύθμιση \textlatin{\texttt{nosuid}} απενεργοποιεί τα \textlatin{\texttt{set-user-identifier}} ή \textlatin{\texttt{set-group-identifier}} \textlatin{bits}. Αυτό απαγορεύει σε απομακρυσμένους χρήστες να αποκτήσουν υψηλότερα δικαιώματα στο σύστημα τρέχοντας ένα πρόγραμμα \textlatin{\texttt{setuid}}. Χρησιμοποιήστε αυτή τη ρύθμιση τόσο στην πλευρά του διακομιστή όσο και στην πλευρά του πελάτη.
+
+Η ρύθμιση \textlatin{\texttt{noexec}} απενεργοποιεί όλα τα εκτελέσιμα αρχεία στο εξαγόμενο σύστημα αρχείων. Χρησιμοποιήστε αυτή τη ρύθμιση για να αποτρέψετε τους χρήστες από το να τρέχουν εκτελέσιμα αρχεία, τα οποία έχουν τοποθετηθεί στο εξαγόμενο σύστημα αρχείων. Οι ρυθμίσεις \textlatin{\texttt{nosuid}} και \textlatin{\texttt{noexec}} είναι ενεργοποιημένες εξ΄ ορισμού σχεδόν για όλα τα συστήματα αρχείων. Χρησιμοποιήστε την \textlatin{\texttt{nodev}} ρύθμιση, για να απαγορεύσετε την πρόσβαση σε συσκευές του διακομιστή.
+
+Η ρύθμιση \textlatin{\texttt{resvport}} ορίζεται στην πλευρά του πελάτη και περιορίζει την δικτυακή επικοινωνία μόνο σε δεσμευμένες πόρτες. Είναι η αντίστοιχη ρύθμιση \textlatin{\texttt{secure}}, η οποία ορίζεται στην πλευρά του διακομιστή. Θέτοντας αυτή τη ρύθμιση, επιβάλλεται στο λογισμικό – πελάτη η χρήση μιας δεσμευμένης πόρτας για την επικοινωνία με το διακομιστή.
+
+Όλες οι εκδόσεις του \textlatin{\texttt{NFS}} υποστηρίζουν προσάρτηση τομών με αυθεντικοποίηση \textlatin{Kerberos}. Η ρύθμιση του λογισμικού – πελάτη για την ενεργοποίηση της είναι: \textlatin{\texttt{sec=krb5}}. Η έκδοση \textlatin{NFSv4} υποστηρίζει προσάρτηση με τη χρήση του \textlatin{krb5i}, για την εξασφάλιση της ακεραιότητας και του \textlatin{krb5p} για την προστασία της ιδιωτικότητας. Αυτές οι ρυθμίσεις εισάγονται από την πλευρά του λογισμικού πελάτη, αλλά πρέπει να ρυθμιστούν πρώτα στο διακομιστή με το \textlatin{\texttt{withsec=krb5}}. Ανατρέξτε στο \textlatin{man page \texttt{exports(5)}}, για περισσότερες πληροφορίες.
+
+Η τροποποίηση του αρχείου \textlatin{\texttt{/etc/exports}} θα πρέπει να γίνεται με μεγάλη προσοχή, έτσι ώστε να μη προστίθεται ο κενός χαρακτήρας, εκεί που δεν πρέπει. Για παράδειγμα οι παρακάτω γραμμή εξάγει τον υποφάκελο \textlatin{\texttt{/tmp/nfs/}} στον Η/Υ \textlatin{\texttt{bob.example.com}} με δικαιώματα ανάγνωσης – εγγραφής.
+\selectlanguage{english}
+\begin{verbatim}
+/tmp/nfs/ bob.example.com(rw)
+\end{verbatim}
+\selectlanguage{greek}
+Η επόμενη γραμμή, από την άλλη πλευρά, εξάγει τον ίδιο φάκελο στον ίδιο Η/Υ με δικαιώματα μόνο-ανάγνωσης και σε όλα τα υπόλοιπα \textlatin{FQDN} με δικαιώματα ανάγνωσης – εγγραφής, λόγω του επιπλέον κενού χαρακτήρα.
+\selectlanguage{english}
+\begin{verbatim}
+/tmp/nfs/ bob.example.com (rw)
+\end{verbatim}
+\selectlanguage{greek}
+
+Τέλος, είναι καλή πρακτική η εξέταση όλων των εξαγωγών \textlatin{NFS} με τη χρήση της εντολής \textlatin{\texttt{showmount}}:
+\selectlanguage{english}
+\begin{verbatim}
+~]# showmount -e <hostname>
+\end{verbatim}
+\selectlanguage{greek}
+
+Το \textlatin{NFSv4} είναι η εξ΄ ορισμού έκδοση για τον \textlatin{Ubuntu Server 16.04LTS} και απαιτεί μόνο την πόρτα \textlatin{TCP} 2049. Αν χρησιμοποιείτε την έκδοση \textlatin{NFSv3}, τότε τέσσερις επιπλέον πόρτες είναι απαραίτητες, όπως εξηγείται παρακάτω.
+
+\paragraph{Ρύθμιση του \textlatin{NFSv3}}
+Οι πόρτες που χρησιμοποιούνται για το \textlatin{NFS}, ορίζονται δυναμικά από το \textlatin{\texttt{rpcbind}}, πράγμα το οποίο μπορεί να δημιουργήσει προβλήματα κατά τον ορισμό κανόνων στο τείχος προστασίας. Για την απλοποίηση αυτής διαδικασίας, χρησιμοποιήστε τα αρχεία \textlatin{\texttt{/etc/default/nfs-common}} και \textlatin{\texttt{/etc/default/nfs-kernel-server}}, για να ορίσετε με στατικό τρόπο τις πόρτες των υπηρεσιών:
+\begin{itemize}
+\item Στο αρχείο \textlatin{\texttt{/etc/default/nfs-kernel-server}} εισάγετε την επόμενη γραμμή για να καθορίσετε την πόρτα του \textlatin{rpc.mountd}:
+\selectlanguage{english}
+\begin{verbatim}
+RPCMOUNTDOPTS="-p 32767"
+\end{verbatim}
+\selectlanguage{greek}
+\item Στο αρχείο \textlatin{\texttt{/etc/default/nfs-common}} εισάγετε την επόμενη γραμμή για να καθορίσετε την πόρτα του \textlatin{rpc.statd}:
+\selectlanguage{english}
+\begin{verbatim}
+STATDOPTS="--port 32765 --outgoing-port 32766"
+\end{verbatim}
+\selectlanguage{greek}
+\item Η πόρτα για το \textlatin{rpc.lockd} μπορεί να ρυθμιστεί στο αρχείο \textlatin{\texttt{/etc/modprobe.d/nfs\_\\local.conf}}:
+\selectlanguage{english}
+\begin{verbatim}
+options lockd nlm_udpport=32768 nlm_tcpport=32768
+options nfs callback_tcpport=32764
+\end{verbatim}
+\selectlanguage{greek}
+Οι παραπάνω γραμμές θέτουν το \textlatin{rpc.lockd} στην πόρτα 32768 \textlatin{TCP/UDP} και την πόρτα του \textlatin{rpc.nfs-cb} σε 32764.
+\item Τέλος, για τη ρύθμιση της πόρτας του \textlatin{rpc.quotad}, δημιουργήστε το αρχείο \textlatin{\texttt{/etc/\\default/quota}} και προσθέστε την ακόλουθη γραμμή:
+\selectlanguage{english}
+\begin{verbatim}
+RPCRQUOTADOPTS="-p 32769"
+\end{verbatim}
+\selectlanguage{greek}
+\end{itemize}
+Οι παραπάνω πόρτες δε θα πρέπει να χρησιμοποιούνται από άλλες υπηρεσίες στο σύστημα, όπως και οι \textlatin{TCP/UDP} πόρτα 2049 (\textlatin{NFS}).
+
+\subsection{Ασφάλιση του \textlatin{Apache HTTP} Διακομιστή}
+Ο διακομιστής ιστοσελίδων \textlatin{Apache} είναι μια από τις πιο σταθερές και ασφαλείς υπηρεσίες, που διατίθενται για το \textlatin{Ubuntu Server 16.04LTS}. Ένα μεγάλο πλήθος ρυθμίσεων και τεχνικών είναι διαθέσιμο για την ασφαλή εγκατάσταση του — αρκετά μεγάλο για να αναφερθεί εκτενώς εδώ. Παρακάτω παρατίθενται μερικές καλές πρακτικές για την ασφαλή ρύθμιση του διακομιστή \textlatin{Apache HTTP}.
+
+\subsubsection{Ασφάλεια του \textlatin{Apache}}
+Ολόκληρα βιβλία μπορούν να αφιερωθούν στην ασφαλή ρύθμιση του \textlatin{Apache}. Περισσότερες πληροφορίες μπορεί να βρει κάποιος στην ιστοσελίδα \textlatin{\url{http://httpd.apache.org/}}. Αρχικά, επιβεβαιώστε ότι οι υποφάκελοι των ρυθμίσεών του έχουν ως ιδιοκτήτη το χρήστη \textlatin{root} και έχουν δικαιώματα 755:
+\selectlanguage{english}
+\begin{verbatim}
+~]# ls -lah /etc/apache2
+total 88K
+drwxr-xr-x   8 root root 4.0K Aug  5 18:26 .
+drwxr-xr-x 102 root root 4.0K Aug  6 01:20 ..
+-rw-r--r--   1 root root 7.0K Mar 19 11:48 apache2.conf
+drwxr-xr-x   2 root root 4.0K Aug  5 18:26 conf-available
+drwxr-xr-x   2 root root 4.0K Aug  5 18:26 conf-enabled
+-rw-r--r--   1 root root 1.8K Mar 19 11:48 envvars
+-rw-r--r--   1 root root  31K Mar 19 11:48 magic
+drwxr-xr-x   2 root root  12K Aug  5 18:26 mods-available
+drwxr-xr-x   2 root root 4.0K Aug  5 18:26 mods-enabled
+-rw-r--r--   1 root root  320 Mar 19 11:48 ports.conf
+drwxr-xr-x   2 root root 4.0K Aug  5 18:26 sites-available
+drwxr-xr-x   2 root root 4.0K Aug  5 18:26 sites-enabled
+\end{verbatim}
+\begin{verbatim}
+~]# ls -lah /usr/sbin/*apache*
+-rwxr-xr-x 1 root root 631K Jul 15 18:33 /usr/sbin/apache2
+-rwxr-xr-x 1 root root 6.3K Mar 19 11:48 /usr/sbin/apache2ctl
+lrwxrwxrwx 1 root root   10 Jul 15 18:33 /usr/sbin/apachectl -> 
+apache2ctl
+\end{verbatim}
+\selectlanguage{greek}
+Κατά τον ίδιο τρόπο το εκτελέσιμο αρχείο \textlatin{\texttt{apache2}} θα πρέπει να έχει ιδιοκτήτη το χρήστη \textlatin{root} και να έχει δικαιώματα 511.
+
+\subsubsection{Καθορισμός Ρυθμίσεων}
+Πρέπει πάντα να επιβεβαιώνετε ότι μόνο ο χρήστης \textlatin{root} έχει δικαιώματα εγγραφής τους υποφακέλους, οι οποίοι περιέχουν \textlatin{scripts - CGIs}. Για να το επιτύχετε αυτό εκτελέστε τις εξής εντολές:
+\selectlanguage{english}
+\begin{verbatim}
+~]# chown root <directory_name>
+~]# chmod 755 <directory_name>
+\end{verbatim}
+\selectlanguage{greek}
+Καλό είναι να ρυθμίσετε την υπηρεσία, ώστε να εκτελείται σε διαφορετική πόρτα από την συνήθη. Τροποποιείστε το αρχείο \textlatin{\texttt{/etc/apache2/apache2.conf}} ως \textlatin{root}. Ορίστε τη ρύθμιση \textlatin{'Listen'} σε μια άλλη πόρτα εκτός των 80 και 443. Σε αυτό το παράδειγμα, ο \textlatin{apache} είναι ρυθμισμένος να δέχεται συνδέσεις στην πόρτα 12345:
+\selectlanguage{english}
+\begin{verbatim}
+Listen 127.0.0.1:12345
+\end{verbatim}
+\selectlanguage{greek}
+
+Ο διαχειριστής συστήματος θα πρέπει να είναι προσεκτικός, όταν ορίζει τις παρακάτω ρυθμίσεις στο αρχείο \textlatin{\texttt{/etc/apache2/apache2.conf}}:
+
+\paragraph{\textlatin{FollowSymLinks}}
+Αυτή η ρύθμιση είναι ενεργοποιημένη εξ΄ ορισμού,  για αυτό το λόγο να είστε προσεκτικοί όταν δημιουργείτε \textlatin{symbolic links} στο \textlatin{document root} του διακομιστή. Για παράδειγμα είναι κακή ιδέα η δημιουργία ενός συμβολικού δείκτη στο \textlatin{\texttt{/}}.
+
+\paragraph{\textlatin{Indexes}}
+Αυτή η ρύθμιση είναι ενεργοποιημένη εξ΄ ορισμού, αλλά μπορεί να μην είναι επιθυμητή. Για να αποτρέψετε τους επισκέπτες από το να βλέπουν τα αρχεία εντός στο διακομιστή, απενεργοποιήστε αυτή τη ρύθμιση.
+
+\paragraph{\textlatin{UserDir}}
+Αυτή η ρύθμιση είναι απενεργοποιημένη εξ΄ ορισμού, καθώς μπορεί να επιβεβαιώσει την παρουσία ενός λογαριασμού στο σύστημα. Παρόλα αυτά, εάν επιθυμείτε να ενεργοποιήσετε αυτή την ρύθμιση, παραμετροποιήστε τις παρακάτω επιλογές:
+\selectlanguage{english}
+\begin{verbatim}
+UserDir enabled
+UserDir disabled root
+\end{verbatim}
+\selectlanguage{greek}
+Οι παραπάνω παράμετροι ενεργοποιούν την πρόσβαση στο φάκελο χρήστη για όλους τους χρήστες πλην του \textlatin{\texttt{/root/}}. Για να προσθέσετε χρήστες στη λίστα των απενεργοποιημένων λογαριασμών, προσθέστε μια λίστα, χωρισμένη με κενούς χαρακτήρες, στη γραμμή \textlatin{\texttt{UserDir disabled}}.
+
+\paragraph{\textlatin{ServerTokens}}
+Η ρύθμιση αυτή καθορίζει την απάντηση που στέλνει ο διακομιστής στους πελάτες~\cite{San:01}. Περιλαμβάνει διάφορες πληροφορίες, οι οποίες μπορούν να ρυθμιστούν με τη χρήση των παρακάτω επιλογών:
+\begin{itemize}
+\item \textlatin{\texttt{ServerTokens Full}} (εξ΄ ορισμού επιλογή) — επιστρέφει όλες τις διαθέσιμες πληροφορίες (πληροφορίες για το ΛΣ και τα ενεργοποιημένα αρθρώματα), για παράδειγμα:
+\selectlanguage{english}
+\begin{verbatim}
+Apache/2.0.41 (Unix) PHP/4.2.2 MyMod/1.2
+\end{verbatim}
+\selectlanguage{greek}
+\item \textlatin{\texttt{ServerTokens Prod}} ή \textlatin{\texttt{ServerTokens ProductOnly}} — επιστρέφει μόνο τις ακόλουθες πληροφορίες:
+\selectlanguage{english}
+\begin{verbatim}
+Apache
+\end{verbatim}
+\selectlanguage{greek}
+\item \textlatin{\texttt{ServerTokens Major}} — επιστρέφει τις ακόλουθες πληροφορίες:
+\selectlanguage{english}
+\begin{verbatim}
+Apache/2
+\end{verbatim}
+\selectlanguage{greek}
+\item \textlatin{\texttt{ServerTokens Minor}} — επιστρέφει τις ακόλουθες πληροφορίες:
+\selectlanguage{english}
+\begin{verbatim}
+Apache/2.0
+\end{verbatim}
+\selectlanguage{greek}
+\item \textlatin{\texttt{ServerTokens Min}} ή \textlatin{\texttt{ServerTokens Minimal}} — επιστρέφει τις ακόλουθες πληροφορίες:
+\selectlanguage{english}
+\begin{verbatim}
+Apache/2.0.41
+\end{verbatim}
+\selectlanguage{greek}
+\item \textlatin{\texttt{ServerTokens OS}} — επιστρέφει τις ακόλουθες πληροφορίες: 
+\selectlanguage{english}
+\begin{verbatim}
+Apache/2.0.41 (Unix)
+\end{verbatim}
+\selectlanguage{greek}
+\end{itemize}
+Συνίσταται η χρήση της επιλογής \textlatin{\texttt{ServerTokens Prod}}, έτσι ώστε ο επιτιθέμενος να μην είναι σε θέση να συγκεντρώσει πολύτιμες πληροφορίες για το σύστημα.
+
+\paragraph{\textlatin{htaccess}}
+Για να αποτρέψετε τους χρήστες από το να δημιουργήσουν αρχεία \textlatin{.htaccess}, τα οποία παρακάμπτουν τις ρυθμίσεις ασφαλείας του διακομιστή, προσθέστε την παρακάτω ρύθμιση στο αρχείο ρυθμίσεων του \textlatin{apache}:
+\selectlanguage{english}
+\begin{verbatim}
+<Directory />
+AllowOverride None
+</Directory>
+\end{verbatim}
+\selectlanguage{greek}
+Για να αποτρέψετε τους χρήστες από το να έχουν πρόσβαση στο σύστημα αρχείων του διακομιστή (ακόμα και στο \textlatin{root directory}), προσθέστε τις παρακάτω γραμμές στο αρχείο ρυθμίσεων του \textlatin{apache}:
+\selectlanguage{english}
+\begin{verbatim}
+<Directory />
+     Order Deny,Allow
+     Deny from all
+ </Directory>
+\end{verbatim}
+\selectlanguage{greek}
+Για να επιτρέψετε την πρόσβαση σε συγκεκριμένους φακέλους:
+\selectlanguage{english}
+\begin{verbatim}
+<Directory /usr/users/*/public\_html>
+     Order Deny,Allow
+     Allow from all
+ </Directory>
+ <Directory /usr/local/httpd>
+     Order Deny,Allow
+     Allow from all
+ </Directory>
+\end{verbatim}
+\selectlanguage{greek}
+
+\paragraph{\textlatin{IncludesNoExec}}
+Είναι καλό να μην αφαιρείται η επιλογή \textlatin{\texttt{IncludesNoExec}}. Είναι ενεργοποιημένη εξ΄ ορισμού, ώστε το άρθρωμα \textlatin{Server-Side Includes (SSI)} να μη μπορεί να εκτελέσει εντολές. Συνιστάται να μην αλλάζετε αυτή τη ρύθμιση, εκτός αν είναι απολύτως απαραίτητο, καθώς θα μπορούσε δυνητικά να επιστρέψει σε ένα επιτιθέμενο να εκτελέσει εντολές στο σύστημα. Τα \textlatin{Server-Side Includes (SSI)} θέτουν ζητήματα ασφαλείας, καθώς δίνουν τη δυνατότητα εκτέλεσης \textlatin{CGI script} και προγραμμάτων στο σύστημα, με τα δικαιώματα του χρήστη που εκτελείται η υπηρεσία \textlatin{apache2}. Για να απενεργοποιήσετε την δυνατότητα των \textlatin{SSI} σελίδων να εκτελούν προγράμματα, βεβαιωθείτε ότι η ρύθμιση \textlatin{\texttt{IncludesNOEXEC}} και όχι η \textlatin{\texttt{Includes}} είναι ενεργοποιημένη. Μπορεί να χρησιμοποιηθεί η επιλογή \textlatin{\texttt{<--\#include virtual="..."-->}} για να εκτελούνται \textlatin{CGI scripts} εφόσον αυτά βρίσκονται σε φακέλους, που έχουν οριστεί με την επιλογή \textlatin{\texttt{ScriptAlias}}. Ο περιορισμός της εκτέλεσης \textlatin{CGI scripts} που βρίσκονται μόνο σε συγκεκριμένους φακέλους, δίνει περισσότερο έλεγχο πάνω στο ποια \textlatin{CGI scripts} μπορούν να εκτελεστούν. 
+
+\subsubsection{Απενεργοποίηση Αχρησιμοποίητων Αρθρωμάτων \textlatin{Apache2}}
+Σε ορισμένες περιπτώσεις είναι καλό να απενεργοποιούνται αρθρώματα (\textlatin{modules}) του \textlatin{apache}, τα οποία δε χρησιμοποιούνται. Για να οριστεί η παραπάνω ρύθμιση, τοποθετήστε ένα σημείο σχολίου (\textlatin{\texttt{\#}}) μπροστά από την αντίστοιχη γραμμή στο αρχείο \textlatin{\texttt{/etc/apache2/\\apache2.conf}}. Για παράδειγμα, για να απενεργοποιήσουμε το \textlatin{mod\_proxy}:
+\selectlanguage{english}
+\begin{verbatim}
+#LoadModule proxy_module modules/mod_proxy.so
+\end{verbatim}
+\selectlanguage{greek}
+Ας σημειωθεί ότι στον υποφάκελο \textlatin{\texttt{/etc/apache2/conf-available}} υπάρχουν αρχεία ρυθμίσεων, τα οποία μπορούν να ενεργοποιήσουν αρθρώματα.
+
+\subsubsection{Ενεργοποίηση του Αρθρώματος \textlatin{mod\_security}}
+Το άρθρωμα \textlatin{mod\_security} είναι διαθέσιμο σε όλες τις εκδόσεις του \textlatin{apache} και ενισχύει την ασφάλεια με την παροχή επιπλέον επιλογών στο αρχείο \textlatin{\texttt{apache2.conf}}. Οι επιλογές αυτές επιτρέπουν το φιλτράρισμα / έλεγχο της δικτυακής κίνησης, που προέρχεται είτε από στατικές είτε από δυναμικές σελίδες. Μπορεί να ρυθμιστεί μια απάντηση για κάθε ανάκτηση δεδομένων από τον πελάτη, η οποία εμπίπτει σε κάποιον κανόνα ελέγχου. Μπορούν επίσης να ρυθμιστούν επιτρεπόμενοι χαρακτήρες \textlatin{ASCII} η τύποι αρχείων που ανεβαίνουν στο διακομιστή από τους πελάτες. Το άρθρωμα \textlatin{mod\_security} παρέχει επίσης εκτεταμένες δυνατότητες καταγραφής συμβάντων. Για περισσότερες πληροφορίες ανατρέξτε στο \textlatin{\url{http://www.modsecurity.org}}.
+
+Για να ενεργοποιηθεί το άρθρωμα:
+\selectlanguage{english}
+\begin{verbatim}
+~]# apt-get install libapache2-mod-security2
+~]# mv /etc/modsecurity/modsecurity.conf-recommended /etc/modsecurity/
+modsecurity.conf
+\end{verbatim}
+\selectlanguage{greek}
+Είναι αναγκαίο να εγκατασταθεί το τελευταίο σύνολο κανόνων \textlatin{ModSecurity OWASP} από την αντίστοιχη ιστοσελίδα και να ενεργοποιήθεί το εξ΄ ορισμού αρχείο ρυθμίσεων \textlatin{modsecurity\_crs\_10\_setup.conf.example}.
+\selectlanguage{english}
+\begin{verbatim}
+~]# wget -O SpiderLabs-owasp-modsecurity-crs.tar.gz \
+https://github.com/SpiderLabs/owasp-modsecurity-crs/tarball/master
+~]# mv /etc/modsecurity/modsecurity_crs_10_setup.conf.example \
+/etc/modsecurity/modsecurity_crs_10_setup.conf
+~]# cp -R SpiderLabs-owasp-modsecurity-crs-*/* /etc/modsecurity/
+
+~]# cd /etc/modsecurity/base_rules
+~]# for f in * ; do sudo ln -s /etc/modsecurity/base_rules/$f /etc/
+modsecurity/activated_rules/$f ; done
+~]# cd /etc/modsecurity/optional_rules
+~]# for f in * ; do sudo ln -s /etc/modsecurity/optional_rules/$f /etc
+/modsecurity/activated_rules/$f ; done
+\end{verbatim}
+\selectlanguage{greek}
+Ενεργοποιούμε το άρθρωμα και επανεκκινούμε την υπηρεσία \textlatin{Apache}.
+\selectlanguage{english}
+\begin{verbatim}
+~]# a2enmod security2
+~]# service apache2 restart
+\end{verbatim}
+\selectlanguage{greek}
+
+\subsubsection{Ενεργοποίηση του Αρθρώματος \textlatin{mod\_evasive}}
+Το άρθρωμα \textlatin{mod\_evasive} προσφέρει δυνατότητες αντίδρασης και διαφυγής από μια διεξαγώμενη επίθεση \textlatin{HTTP DoS} ή \textlatin{brute force}. Είναι επίσης σχεδιασμένο να ανιχνεύει την ύποπτη κίνηση και να επικοινωνεί με τείχη προστασίας, δρομολογητές και άλλες δικτυακές συσκευές. Το άρθρωμα \textlatin{mod\_evasive} είναι σε θέση να ενημερώνει τόσο μέσω \textlatin{email}, όσο και μέσω υποδομής \textlatin{syslog}. Για την εγκατάστασή του πληκτρολογούμε:
+\selectlanguage{english}
+\begin{verbatim}
+~]# apt-get install libapache2-mod-evasive
+~]# mkdir /var/log/mod_evasive
+~]# chown www-data:www-data /var/log/mod_evasive/
+\end{verbatim}
+\selectlanguage{greek}
+Έπειτα, ρυθμίζουμε το άρθρωμα
+\selectlanguage{english}
+\begin{verbatim}
+~]# cat > /etc/apache2/mods-available/mod-evasive.conf << EOF
+<ifmodule mod_evasive20.c>
+   DOSHashTableSize 3097
+   DOSPageCount  2
+   DOSSiteCount  50
+   DOSPageInterval 1
+   DOSSiteInterval  1
+   DOSBlockingPeriod  10
+   DOSLogDir   /var/log/mod_evasive
+   DOSEmailNotify  root@localhost
+   DOSWhitelist   127.0.0.1
+</ifmodule>
+EOF
+\end{verbatim}
+\selectlanguage{greek}
+Τέλος, ενεργοποιούμε και επανεκκινούμε την υπηρεσία \textlatin{Apache}
+\selectlanguage{english}
+\begin{verbatim}
+~]# a2enmod evasive
+~]# service apache2 restart
+\end{verbatim}
+\selectlanguage{greek}
+
+\subsubsection{Συνιστώμενα Πρωτόκολλα Κρυπτογράφησης}
+Θα πρέπει να χρησιμοποιείτε το \textlatin{HTTPS} αντί για το παλαιότερο \textlatin{HTTP}, όταν είναι απαραίτητο να διακινηθεί διαβαθμισμένη πληροφορία μεταξύ πελάτη - διακομιστή, όπως κωδικοί πρόσβασης. Παρατίθενται στη συνέχεια, ορισμένες συμβουλές για την επιλογή των πρωτοκόλλων κρυπτογράφησης.
+\begin{itemize}
+\item \textlatin{SSL v2} Να μη χρησιμοποιείται, έχει σοβαρά κενά ασφαλείας.
+\item \textlatin{SSL v3} Να μη χρησιμοποιείται, έχει σοβαρά κενά ασφαλείας.
+\item \textlatin{TLS v1.0} Χρησιμοποιήστε μόνο για λόγους διαλειτουργικότητας. Έχει γνωστά κενά ασφαλείας, τα οποία δεν μπορούν να αντιμετωπιστούν με τρόπο ο οποίος να εξασφαλίζει τη διαλειτουργικότητα και έτσι είναι εξ΄ ορισμού ευάλωτο. Δεν υποστηρίζει τα σύγχρονα πακέτα κρυπτογράφησης (\textlatin{cipher suites}).
+\item \textlatin{TLS v1.1} Χρησιμοποιήστε μόνο για λόγους διαλειτουργικότητας. Έχει γνωστά κενά ασφαλείας, τα οποία δεν μπορούν να αντιμετωπιστούν με τρόπο ο οποίος να εξασφαλίζει τη διαλειτουργικότητα και έτσι είναι εξ΄ ορισμού ευάλωτο. Δεν υποστηρίζει τα σύγχρονα πακέτα κρυπτογράφησης (\textlatin{cipher suites}).
+\item \textlatin{TLS v1.2} Συνιστώμενη έκδοση, υποστηρίζει όλα τα σύγχρονα πακέτα κρυπτογράφησης (\textlatin{cipher suites}).
+\end{itemize}
+
+Ο \textlatin{Apache} μπορεί να χρησιμοποιήσει είτε \textlatin{OpenSSL} είτε \textlatin{NSS} βιβλιοθήκες για την κρυπτογράφηση \textlatin{TLS}. Ανάλογα με την επιλογή βιβλιοθήκης, τα αρθρώματα \textlatin{mod\_ssl} ή \textlatin{mod\_nss} πρέπει να εγκατασταθούν. Για παράδειγμα, για την εγκατάσταση του \textlatin{OpenSSL} αρθρώματος \textlatin{mod\_nss} πληκτρολογήστε τα παρακάτω ως υπερχρήστης:
+\selectlanguage{english}
+\begin{verbatim}
+~]# apt-get install libapache2-mod-nss
+\end{verbatim}
+\selectlanguage{greek}
+Το πακέτο \textlatin{mod\_ssl} εγκαθιστά το αρχείο ρυθμίσεων \textlatin{\texttt{/etc/apache2/mods-available/\\ssl.conf}}, το οποίο είναι δυνατό να χρησιμοποιηθεί για να καθορίσει τις \textlatin{TLS} ρυθμίσεις του \textlatin{Apache}. Κατά τον ίδιο τρόπο, το πακέτο \textlatin{mod\_nss} εγκαθιστά το \textlatin{\texttt{/etc/apache2/\\mods-available/nss.conf}} αρχείο ρυθμίσεων.
+
+Κατά την τροποποίηση των επιλογών στο αρχείο \textlatin{\texttt{etc/apache2/mods-available/\\ssl.conf}}, βεβαιωθείτε ότι οι επόμενες επιλογές είναι ενεργοποιημένες κατ΄ελάχιστο:
+\begin{itemize}
+\item \textlatin{SSLProtocol}
+Καθορίζει την έκδοση του \textlatin{TLS} (ή \textlatin{SSL}) που επιτρέπεται.
+\item \textlatin{SSLCipherSuite}
+Καθορίζει το επιθυμητό πακέτο κρυπτογράφησης ή απενεργοποιεί τα μη επιθυμητά.
+\item \textlatin{SSLHonorCipherOrder}
+Επιβάλει στους πελάτες να χρησιμοποιούν τα πακέτα κρυπτογράφησης με τη σειρά προτίμησης, όπως αυτά ορίστηκαν παραπάνω. Για παράδειγμα:
+\selectlanguage{english}
+\begin{verbatim}
+SSLProtocol all -SSLv2 -SSLv3 SSLCipherSuite HIGH:!aNULL:!MD5 
+
+SSLHonorCipherOrder on
+\end{verbatim}
+\selectlanguage{greek}
+Να σημειωθεί οτι οι παραπάνω ρυθμίσεις είναι οι ελάχιστα απαιτούμενες.
+\end{itemize}
+
+Για να καθορίσετε τον τρόπο λειτουργίας του \textlatin{mod\_nss module}, τροποποιήστε το ακόλουθο αρχείο ρυθμίσεων: \textlatin{\texttt{etc/apache2/mods-available/nss.conf}}. Το άρθρωμα \textlatin{mod\_nss} προέρχεται από το \textlatin{mod\_ssl} και έτσι μοιράζεται πολλά κοινά στοιχεία με αυτό, όπως τις διαθέσιμες επιλογές στο αρχείο ρυθμίσεων. Η διαφορά είναι οτι στο \textlatin{mod\_nss} οι ρυθμίσεις έχουν πρόθεμα του \textlatin{NSS} αντί για του \textlatin{SSL}.
+
+\subsubsection{Χρήση του \textlatin{fail2ban}}
+Η ασφάλεια του \textlatin{Apache} μπορεί να ενισχυθεί περαιτέρω με τη χρήση του \textlatin{fail2ban}. Για ένα παράδειγμα ρύθμισης του \textlatin{fail2ban} για μια υπηρεσία (εν προκειμένω αυτή του \textlatin{SSH}), δείτε το επόμενο τμήμα.
+
+\subsection{Ασφάλιση του \textlatin{SSH}}
+Το \textlatin{SSH} είναι ένα ισχυρό δικτυακό πρωτόκολλο, το οποίο χρησιμοποιείται για την επικοινωνία με ένα σύστημα μέσω ενός ασφαλούς καναλιού. Για να ενεργοποιηθεί η χρήση κρυπτογραφημένων κλειδιών για την αυθεντικοποίηση, πρέπει η επιλογή \textlatin{\texttt{PubkeyAuthentica-\\tion}} στο αρχείο \textlatin{\texttt{/etc/ssh/sshd\_config}} να είναι \textlatin{'yes'}~\cite{IBM:01}. Αυτή είναι η εξ΄ ορισμού ρύθμιση. Θέστε την επιλογή \textlatin{\texttt{PasswordAuthentication}} σε \textlatin{'no'} για να απενεργοποιήσετε εντελώς τη χρήση των κωδικών για αυθεντικοποίηση. Μπορούμε να δημιουργήσουμε δημόσια κλειδιά για τη χρήση \textlatin{ssh}, ως εξής:
+\selectlanguage{english}
+\begin{verbatim}
+~]$ ssh-keygen -t rsa
+\end{verbatim}
+\selectlanguage{greek}
+Η χρήση πολλαπλών μεθόδων αυθεντικοποίησης, ή \textlatin{multi-factor}, αυξάνει το επίπεδο της προστασίας ενάντια σε μη εξουσιοδοτημένη πρόσβαση και θα πρέπει να εφαρμόζεται κατά την ενίσχυση της ασφαλείας ενός συστήματος, ώστε να αποτραπεί πιθανή μη εξουσιοδοτημένη πρόσβαση. Χρήστες οι οποίοι προσπαθούν να εισέλθουν στο σύστημα θα πρέπει να ολοκληρώσουν επιτυχώς όλες τις διαδικασίες αυθεντικοποίησης.
+\selectlanguage{english}
+\begin{verbatim}
+AuthenticationMethods publickey,gssapi-with-mic publickey,keyboard-
+interactive
+\end{verbatim}
+\selectlanguage{greek}
+Η υπηρεσία \textlatin{sshd} η οποία έχει ρυθμιστεί με τις παραπάνω επιλογές \textlatin{\texttt{AuthenticationMe-\\thods}} στο αρχείο \textlatin{\texttt{/etc/ssh/sshd\_config}}, επιτρέπει την είσοδο στο σύστημα μόνο όταν ο χρήστης ολοκληρώσει με επιτυχία τη διαδικασία αυθεντικοποίησης με δημόσιο κλειδί με \textlatin{gssapi-with-mic} ή με εισαγωγή κωδικού χρήστη~\cite{Red:01}. Οι χρήστες καλό είναι να χρησιμοποιούν το πρωτόκολλο \textlatin{SSH-2}, καθότι παρέχει πιο ασφαλείς διαδικασίες αυθεντικοποίησης και επικοινωνίας. Επίσης, η χρήση \textlatin{ECDSA (Elliptic Curve Digital Signature Algorithm)} προσφέρει καλύτερη απόδοση στο ίδιο μήκος συμμετρικού κλειδιού. Επίσης παράγει κλειδιά μικρότερου μήκους.
+
+Συνίσταται, επίσης, η αλλαγή της πόρτας στην οποία δέχεται συνδέσεις η υπηρεσία, τροποποιώντας την κατάλληλη εγγραφή στο αρχείο \textlatin{\texttt{/etc/ssh/sshd\_config}}:
+\selectlanguage{english}
+\begin{verbatim}
+Listen :12345
+\end{verbatim}
+\selectlanguage{greek}
+
+Σε αυτό το σημείο πρέπει να τονιστεί ότι, η απενεργοποίηση ή κλείδωμα ενός λογαριασμού δεν αποτρέπει τον χρήστη από το να εισέλθει στο σύστημα απομακρυσμένα, εφόσον έχει ρυθμίσει αυθεντικοποίηση \textlatin{RSA} με δημόσιο κλειδί. Για αυτό το λόγο θα πρέπει να ελέγχεται ο υποφάκελος του χρήστη για αρχεία τα οποία επιτρέπουν αυτόν τον τρόπο αυθεντικοπίησης, όπως το \textlatin{\texttt{.ssh/authorized\_keys}}.
+
+Πρέπει να υφίσταται περιορισμός των χρηστών που μπορούν να λάβουν πρόσβαση \textlatin{SSH}. Για παράδειγμα οι χρήστες που είναι αναγκαίο να έχουν πρόσβαση, είναι καλό να ανήκουν σε μια ομάδα που ονομάζεται \textlatin{'sshlogin'}. Η ομάδα αυτή στη συνέχεια θα πρέπει να είναι στην μεταβλητή \textlatin{\texttt{AllowGroups}} στο αρχείο \textlatin{\texttt{/etc/ssh/sshd\_config}}. Μια άλλη λύση είναι να επιτρέπεται μόνο στους \textlatin{sudoers} να χρησιμοποιούν απομακρυσμένη πρόσβαση.
+\selectlanguage{english}
+\begin{verbatim}
+AllowGroups sudo,sshlogin
+\end{verbatim}
+\selectlanguage{greek}
+Προσθήκη των επιτρεπόμενων χρηστών στην ομάδα \textlatin{'sshlogin'} και επανεκκίνηση της υπηρεσίας.
+\selectlanguage{english}
+\begin{verbatim}
+~]# sudo adduser username sshlogin
+~]# sudo systemctl restart sshd
+\end{verbatim}
+\selectlanguage{greek}
+
+Για την απενεργοποίηση των \textlatin{root logins} απενεργοποιούμε την αντίστοιχη επιλογή στο αρχείο ρυθμίσεων, \textlatin{\texttt{/etc/ssh/sshd\_config}}:
+\selectlanguage{english}
+\begin{verbatim}
+PermitRootLogin no
+\end{verbatim}
+\selectlanguage{greek}
+Για περαιτέρω ασφάλεια, η υπηρεσία είναι δυνατό να εκτελείται σε περιβάλλον \textlatin{sandbox}:
+\selectlanguage{english}
+\begin{verbatim}
+UsePrivilegeSeparation sandbox
+\end{verbatim}
+\selectlanguage{greek}
+
+Καλό είναι να απενεργοποιείται το \textlatin{X Forwarding} για το \textlatin{ssh}. Κατά αυτόν τον τρόπο δε μπορεί ένας κακόβουλος χρήστης να εκτελέσει προγράμματα \textlatin{X} στο σύστημα. Αυτό έχει εφαρμογή περισσότερο σε εγκαταστάσεις \textlatin{desktop}:
+\selectlanguage{english}
+\begin{verbatim}
+X11Forwarding no
+\end{verbatim}
+\selectlanguage{greek}
+
+To \textlatin{script} το οποίο συνοδεύει το παρόν κείμενο (βλ. Κεφ.~\ref{script}) ρυθμίζει πληθώρα άλλων επιλογών, όπως ενεργοποιημένα \textlatin{ciphers}, μέγιστο πλήθος αποτυχημένων προσπαθειών αυθεντικοποίησης, ταυτόχρονων συνεδριών κ.α.
+
+Η ασφάλεια του \textlatin{SSH} μπορεί να ενισχυθεί περαιτέρω με τη χρήση του \textlatin{fail2ban}. Τροποποιήστε το αρχείο ρυθμίσεων \textlatin{\texttt{/etc/fail2ban/jail.local}} και ενεργοποιήστε τους απαραίτητους κανόνες:
+\selectlanguage{english}
+\begin{verbatim}
+~]# cat >> /etc/fail2ban/jail.local << EOF
+[ssh]
+
+enabled  = true
+port     = ssh
+filter   = sshd
+logpath  = /var/log/auth.log
+maxretry = 3
+EOF
+\end{verbatim}
+\selectlanguage{greek}
+τέλος επανεκκινήστε την υπηρεσία:
+\selectlanguage{english}
+\begin{verbatim}
+~]# service fail2ban restart
+\end{verbatim}
+\selectlanguage{greek}
+
+\subsection{Ασφαλής Ρύθμιση του \textlatin{SAMBA}}
+Το \textlatin{Samba} είναι ένα σημαντικό εργαλείο για την ενσωμάτωση των \textlatin{Linux Servers - Desktops} σε ένα \textlatin{Active Directory (AD)} περιβάλλον. Η υπηρεσία αυτή μπορεί να λειτουργήσει τόσο ως \textlatin{domain controller (NT4-style)} ή ως ένας αυτόνομος \textlatin{domain member (AD} ή \textlatin{NT4-style)}~\cite{Red:02}. Το \textlatin{Samba} αποτελείται από τρεις υπηρεσίες - \textlatin{daemons (smbd, nmbd, and winbindd)}. Αυτές οι τρεις υπηρεσίες καθορίζουν τον τρόπο λειτουργίας του \textlatin{SAMBA}. Και οι τρεις αυτές υπηρεσίες έχουν ξεχωριστά \textlatin{script} εκκίνησης.
+
+Δύο είναι οι τρόποι λειτουργίας για το \textlatin{Samba, share-level} και \textlatin{user-level}, οι οποίοι είναι κοινώς γνωστοί ως επίπεδα ασφαλείας. Το \textlatin{Share-level} επίπεδο ασφαλείας είναι ξεπερασμένο και έχει αφαιρεθεί από τις νεότερες εκδόσεις του λογισμικού. Το \textlatin{User-level} επίπεδο ασφαλείας είναι το εξ΄ ορισμού ενεργοποιημένο και συνιστώμενο επίπεδο. Ακόμα και αν η παράμετρος \textlatin{'security=user'} δεν περιέχεται στο αρχείο ρυθμίσεων \textlatin{\texttt{/etc/samba/smb.conf}}, ενεργοποιείται αυτόματα.
+
+Σε επίπεδο ασφαλείας \textlatin{domain (user-level)}, ο διακομιστής \textlatin{Samba} έχει ένα λογαριασμό στο επίπεδο της μηχανής \textlatin{(domain security trust account)} και αναδρομολογεί όλες τις αιτήσεις αυθεντικοποίησης μέσα από τους \textlatin{domain controllers}. Ο εξυπηρετητής \textlatin{Samba} γίνεται \textlatin{member server} του \textlatin{domain} με τη χρήση των παρακάτω επιλογών στο αρχείο ρυθμίσεων \textlatin{\texttt{/etc/samba/smb.conf}}: 
+\selectlanguage{english}
+\begin{verbatim}
+[GLOBAL]
+security = domain
+workgroup = MARKETING
+\end{verbatim}
+\selectlanguage{greek}
+Αν υπάρχει έτοιμο περιβάλλον \textlatin{Active Directory}, τότε είναι προτιμητέο να γίνει, ο εξυπηρετητής \textlatin{Samba}, μέλος σε αυτό.
+\selectlanguage{english}
+\begin{verbatim}
+[GLOBAL]
+security = ADS
+realm = EXAMPLE.COM
+password server = kerberos.example.com
+\end{verbatim}
+\selectlanguage{greek}
+Στο επίπεδο ασφαλείας \textlatin{share-level}, ο εξυπηρετητής δέχεται κατά τη διαδικασία της αυθεντικοποίησης, μόνο ένα κωδικό πρόσβασης από τον πελάτη, χωρίς ένα καθορισμένο όνομα χρήστη. Σε αυτή την περίπτωση, αναμένει για κάθε εξαγόμενο σύστημα αρχείων (\textlatin{share}) ένα κωδικό πρόσβασης, ανεξάρτητα από όνομα χρήστη. Εάν είναι αναγκαίο να χρησιμοποιήσετε αυτό το επίπεδο ασφαλείας μην ορίζετε την παράμετρο \textlatin{\texttt{security = share}} αλλά τροποποιήστε το αρχείο ρυθμίσεων \textlatin{\texttt{/etc/samba/smb.conf}}, όπως παρακάτω~\cite{Red:02}:
+\selectlanguage{english}
+\begin{verbatim}
+[GLOBAL]
+security = user
+map to guest = Bad User
+username map = /etc/samba/smbusers
+
+[SHARE]
+guest ok = yes
+\end{verbatim}
+\selectlanguage{greek}
+Πρέπει επίσης να τροποποιήσετε το αρχείο \textlatin{\texttt{/etc/samba/smbusers}} όπως παρακάτω:
+\selectlanguage{english}
+\begin{verbatim}
+nobody = guest.
+\end{verbatim}
+\selectlanguage{greek}
+
+\section{Ασφαλής Ρύθμιση της Δικτυακής Πρόσβασης}
+
+\subsection{Ασφάλεια Διαφόρων Παραμέτρων του Δικτύου}
+Στα επόμενα τμήματα περιγράφονται με αδρές γραμμές, ζητήματα ασφαλείας που αφορούν την δικτυακή πρόσβαση.
+
+\paragraph{Απενεργοποίηση \textlatin{Source Routing}}
+To \textlatin{Source routing} είναι ένας μηχανισμός του διαδικτύου, ο οποίος επιτρέπει σε ένα πακέτο να μεταφέρει μια λίστα διευθύνσεων \textlatin{IP}, η οποία ενημερώνει τον δρομολογητή για την διαδρομή που θα πρέπει να ακολουθήσει το πακέτο. Υπάρχει επίσης, η επιλογή της καταγραφής των \textlatin{IP} (\textlatin{hops}) που διασχίσει το πακέτο κατά τη διαδρομή του. Η λίστα των διασχισμένων \textlatin{IP}, το \textlatin{"route record"}, παρέχει την διεύθυνση προορισμού και πληροφορίες για τη διαδρομή επιστροφής. Αυτό επιτρέπει στην αφετηρία (\textlatin{source}) να καθορίσει τη διαδρομή που θα ακολουθήσει το πακέτο (απόλυτα ή πιο ελεύθερα), αγνοώντας τους πίνακες δρομολόγησης των ενδιάμεσων δρομολογητών. Αυτό επιτρέπει την αναδρομολόγηση της δικτυακής κίνησης από τους κακόβουλους χρήστες. Για αυτό το λόγο θα πρέπει η παραπάνω δυνατότητα να απενεργοποιείται.
+
+Η επιλογή \textlatin{\texttt{accept\_source\_route}} καθορίζει τις δικτυακές διεπαφές (\textlatin{network interfaces}) ώστε να δέχονται πακέτα με ενεργοποιημένη την παράμετρο \textlatin{Strict Source Route (SSR)} ή \textlatin{Loose Source Routing (LSR)}. Η παραμετροποίησή της, γίνεται μέσω του \textlatin{sysctl}. Εκτελέστε την παρακάτω εντολή ως χρήστης \textlatin{root}, ώστε να απορρίπτονται τα πακέτα που έχουν ενεργοποιημένο \textlatin{SSR} ή \textlatin{LSR}:
+\selectlanguage{english}
+\begin{verbatim}
+~]# /sbin/sysctl -w net.ipv4.conf.all.accept_source_route=0
+\end{verbatim}
+\selectlanguage{greek}
+Σε συνέχεια των παραπάνω ενεργειών, θα πρέπει να απενεργοποιείται και το \textlatin{packet forwarding}, όταν αυτό είναι εφικτό (η επέμβαση αυτή μπορεί βέβαια να έχει αντίκτυπο στο \textlatin{virtualization}). Οι παρακάτω εντολές απενεργοποιούν το \textlatin{forwarding} για \textlatin{IPv4} και \textlatin{IPv6} πακέτα σε όλες τις δικτυακές διεπαφές:
+\selectlanguage{english}
+\begin{verbatim}
+~]# /sbin/sysctl -w net.ipv4.conf.all.forwarding=0
+~]# /sbin/sysctl -w net.ipv6.conf.all.forwarding=0
+\end{verbatim}
+\selectlanguage{greek}
+Επίσης, οι εξής εντολές απενεργοποιούν το \textlatin{forwarding} για τα πακέτα \textlatin{multicast} σε όλες τις δικτυακές διεπαφές:
+\selectlanguage{english}
+\begin{verbatim}
+~]# /sbin/sysctl -w net.ipv4.conf.all.mc_forwarding=0 
+~]# /sbin/sysctl -w net.ipv6.conf.all.mc_forwarding=0
+\end{verbatim}
+\selectlanguage{greek}
+Η αποδοχή \textlatin{ICMP redirects} έχει ελάχιστες χρήσιμες εφαρμογές. Γι' αυτό είναι καλό να απενεργοποιούνται, εκτός αν είναι απολύτως αναγκαίο. Οι εξής εντολές απενεργοποιούν την αποδοχή για όλα τα \textlatin{ICMP redirected} πακέτα σε όλες τις δικτυακές διεπαφές.
+\selectlanguage{english}
+\begin{verbatim}
+~]# /sbin/sysctl -w net.ipv4.conf.all.accept_redirects=0
+~]# /sbin/sysctl -w net.ipv6.conf.all.accept_redirects=0
+\end{verbatim}
+\selectlanguage{greek}
+Η εξής εντολή απενεργοποιεί την αποδοχή για όλα τα \textlatin{secure ICMP redirected} πακέτα σε όλες τις δικτυακές διεπαφές.
+\selectlanguage{english}
+\begin{verbatim}
+~]# /sbin/sysctl -w net.ipv4.conf.all.secure_redirects=0
+\end{verbatim}
+\selectlanguage{greek}
+Η εξής εντολή απενεργοποιεί την αποστολή για όλα τα \textlatin{ICMP redirected} πακέτα σε όλες τις δικτυακές διεπαφές.
+\selectlanguage{english}
+\begin{verbatim}
+~]# /sbin/sysctl -w net.ipv4.conf.all.send_redirects=0
+\end{verbatim}
+\selectlanguage{greek}
+
+\paragraph{Απενεργοποίηση του \textlatin{Reverse Path Forwarding}}
+Το \textlatin{Reverse Path Forwarding} χρησιμοποιείται για να αποτρέψει πακέτα τα οποία εισήλθαν από μια δικτυακή διεπαφή (\textlatin{interface}) να εξέλθουν μέσω μιας άλλης. Η κατάσταση κατά την οποία οι δρομολογήσεις εισόδου / εξόδου (\textlatin{outgoing / incoming routes}) είναι διαφορετικές, καλείται ασύμμετρη δρομολόγηση (\textlatin{asymmetric routing}). Οι δρομολογητές συχνά χρησιμοποιούν αυτό τον τύπο δρομολόγησης, αλλά οι περισσότεροι Η/Υ συνήθως δε χρειάζεται να το κάνουν. Περιπτώσεις στις οποίες μπορεί να χρησιμοποιείται αυτός ο τρόπος δρομολόγησης είναι, σε εφαρμογές οι οποίες στέλνουν δικτυακή κίνηση από μια δικτυακή συσκευή και δέχονται κίνηση από μία άλλη, η οποία επικοινωνεί με διαφορετικό \textlatin{service provider}. Παραδείγματα τέτοιων περιπτώσεων είναι οι συνδυασμοί \textlatin{DSL} με \textlatin{leased lines} ή δορυφορικές συνδέσεις με \textlatin{3G}. Εάν αυτό το σενάριο δεν ανταποκρίνεται στην πραγματικότητα, όσον αφορά μια υποδομή, τότε η ενεργοποίηση του \textlatin{reverse path forwarding} στη δικτυακή διεπαφή εισόδου είναι απαραίτητη. Εν ολίγοις, εκτός εάν γνωρίζετε ότι η λειτουργία αυτή δεν είναι απαραίτητη, πρέπει να ενεργοποιείται καθώς αποτρέπει τους χρήστες να πλαστογραφούν διευθύνσεις από διάφορα υποδίκτυα (\textlatin{IP spoofing}) και μειώνει την πιθανότητα \textlatin{DDoS} επιθέσεων.
+
+Το \textlatin{Reverse Path Forwarding} ενεργοποιείται με τη χρήση της παραμέτρου \textlatin{\texttt{rp\_filter}}. Το \textlatin{sysctl} μπορεί να χρησιμοποιηθεί για να αλλάξει τις ρυθμίσεις αυτές προσωρινά, ενώ η μόνιμη αλλαγή αποθηκεύεται με την εγγραφή στο αρχείο \textlatin{\texttt{/etc/sysctl.conf}}. Η παράμετρος \textlatin{\texttt{rp\_filter}} χρησιμοποιείται για να θέσει στον πυρήνα του ΛΣ έναν από τους παρακάτω τρόπους λειτουργίας.
+\selectlanguage{english}
+\begin{verbatim}
+~]# sysctl -w net.ipv4.conf.default.rp_filter=integer
+~]# sysctl -w net.ipv4.conf.all.rp_filter=integer
+\end{verbatim}
+\selectlanguage{greek}
+όπου \textlatin{integer} είναι ένας από τους παρακάτω:
+\begin{itemize}
+\item 0 — \textlatin{No source validation}.
+\item 1 — \textlatin{Strict mode / RFC 3704}.
+\item 2 — \textlatin{Loose mode / RFC 3704}.
+\end{itemize}
+Η ρύθμιση αυτή μπορεί να γίνει και κατά διεπαφή:
+\selectlanguage{english}
+\begin{verbatim}
+~]# sysctl -w net.ipv4.conf.interface.rp_filter=integer
+\end{verbatim}
+\selectlanguage{greek}
+Για να θέσετε μόνιμα αυτές τις αλλαγές, τροποποιήστε το αρχείο \textlatin{\texttt{/etc/sysctl.conf}}. Για παράδειγμα, εισάγετε στο αρχείο αυτό τη γραμμή:
+\selectlanguage{english}
+\begin{verbatim}
+net.ipv4.conf.all.rp_filter=1
+\end{verbatim}
+\selectlanguage{greek}
+
+\paragraph{Απενεργοποίηση του \textlatin{Zeroconf Networking}}
+Το \textlatin{Zeroconf} καθορίζει την διεύθυνση την οποία θα λάβει ο Η/Υ, εφόσον δεν καταφέρει να λάβει μια μέσω \textlatin{DHCP}. Σε αυτή την περίπτωση, η διεπαφή θα λάβει μια διεύθυνση στο υποδίκτυο 169.254.0.0. Για να απενεργοποιήσετε την παραπάνω λειτουργία, εκτελέστε τις εξής εντολές~\cite{Arr:01}:
+\selectlanguage{english}
+\begin{verbatim}
+~]# apt-get purge avahi-autoipd
+\end{verbatim}
+\selectlanguage{greek}
+
+\paragraph{Αγνόηση των πακέτων \textlatin{ICMP} - \textlatin{Broadcast Request} - \textlatin{Martian Packets}}
+Προσθέστε την ακόλουθη γραμμή στο αρχείο \textlatin{\texttt{/etc/sysctl.conf}} για να εξαναγκάσετε το ΛΣ να αγνοεί τα \textlatin{ping} ή τα \textlatin{broadcast requests}:
+\begin{itemize}
+\item Αγνόηση \textlatin{ICMP request}:
+\selectlanguage{english}
+\begin{verbatim}
+net.ipv4.icmp_echo_ignore_all = 1
+\end{verbatim}
+\selectlanguage{greek}
+\item Αγνόηση \textlatin{Broadcast request}:
+\selectlanguage{english}
+\begin{verbatim}
+net.ipv4.icmp_echo_ignore_broadcasts = 1
+\end{verbatim}
+\selectlanguage{greek}
+\item Καταγραφή πακέτων από μη ορθές ή μη αναμενόμενες διευθύνσεις (\textlatin{Martian Packets / Un-routable Source Addresses}):
+\selectlanguage{english}
+\begin{verbatim}
+net.ipv4.conf.all.log_martians = 1
+\end{verbatim}
+\selectlanguage{greek}
+\end{itemize}
+
+\paragraph{Απενεργοποίηση πρωτοκόλλου \textlatin{IPv6}}
+Εάν δεν χρησιμοποιείτε το \textlatin{IPv6} τότε είναι καλό να απενεργοποιείτε, καθώς οι περισσότερες υπηρεσίες εντός \textlatin{DMZ} δεν το χρησιμοποιούν και συνήθως είναι ελλιπής ο έλεγχος του μέσω των τειχών προστασίας. Ανοίξτε το αρχείο \textlatin{\texttt{/etc/modprobe.d/disablenet.conf}} και προσθέστε την επιλογή:
+\selectlanguage{english}
+\begin{verbatim}
+ipv6 disable=1
+\end{verbatim}
+\selectlanguage{greek}
+Απενεργοποιείστε το \textlatin{IPv6} μέσω \textlatin{sysctl} για όλες τις διεπαφές, τροποποιώντας το αρχείο \textlatin{\texttt{/etc/sysctl.conf}}~\cite{Hit:01}.
+\selectlanguage{english}
+\begin{verbatim}
+net.ipv6.conf.all.disable_ipv6 = 1
+net.ipv6.conf.default.disable_ipv6 = 1
+net.ipv6.conf.lo.disable_ipv6 = 1
+\end{verbatim}
+\selectlanguage{greek}
+Τέλος, απενεργοποιείστε το \textlatin{IPv6} στον πυρήνα του ΛΣ. Τροποποιήστε το αρχείο \textlatin{\texttt{/etc/\\default/grub}} και προσθέστε \textlatin{\texttt{ipv6.disable=1}} στη γραμμή που καθορίζει τις παραμέτρους φόρτωσης του πυρήνα (\textlatin{\texttt{GRUB\_CMDLINE\_LINUX\_DEFAULT}}). Τέλος ενημερώστε το \textlatin{grub} με τις αλλαγές, όπως παρακάτω:
+\selectlanguage{english}
+\begin{verbatim}
+~]# update-grub
+\end{verbatim}
+\selectlanguage{greek}
+
+\paragraph{Απενεργοποίηση του \textlatin{RPC IPv6}}
+Οι υπηρεσίες \textlatin{RPC}, όπως το \textlatin{NFS}, επιχειρούν να εκκινήσουν χρησιμοποιώντας το \textlatin{IPv6} ακόμα και αν αυτό ειναι απενεργοποιημένο στο \textlatin{\texttt{/etc/modprobe.d}}~\cite{Arr:01}. Για να εμποδίσετε αυτή τη συμπεριφορά, τροποποιήστε το αρχείο \textlatin{\texttt{/etc/netconfig}} και τοποθετήστε ένα σημείο σχολίου (\textlatin{\texttt{\#}}) μπροστά από τις εξής γραμμές:
+\selectlanguage{english}
+\begin{verbatim}
+#udp6       tpi_clts      v     inet6    udp     -       -
+#tcp6       tpi_cots_ord  v     inet6    tcp     -       -
+\end{verbatim}
+\selectlanguage{greek}
+
+\subsection{Ασφάλιση του \textlatin{DNS} με το \textlatin{DNSSEC}}\label{dnssec}
+Το \textlatin{DNSSEC} είναι μια προσθήκη ασφαλείας για το \textlatin{DNS} (\textlatin{Domain Name System Security Extensions, DNSSEC}), η οποία δίνει τη δυνατότητα σε ένα πελάτη της υπηρεσίας \textlatin{DNS}, να αυθεντικοποιεί και να ελέγχει την ακεραιότητα των απαντήσεων του διακομιστή \textlatin{DNS}, με απώτερο σκοπό να επιβεβαιώσει την προέλευσή τους και να διαπιστώσει εάν έχουν αλλοιωθεί κατά την μετάβασή τους. Η ενεργοποίηση του \textlatin{DNSSEC} γίνεται ως εξής:
+\selectlanguage{english}
+\begin{verbatim}
+~]# apt-get install unbound
+~]# systemctl enable unbound
+~]# systemctl start unbound
+\end{verbatim}
+\selectlanguage{greek}
+Ο \textlatin{unbound daemon} επιτρέπει την ρύθμιση των τοπικών δεδομένων \textlatin{dns cache}, καθώς και των στατικών αντιστοιχίσεων \textlatin{dns}, χρησιμοποιώντας τους εξής υποφακέλους:
+\begin{itemize}
+\item Ο \textlatin{\texttt{/etc/unbound/conf.d}} χρησιμοποιείται για να προσθέσει παραμέτρους για ένα συγκεκριμένο \textlatin{domain name}. Αυτό χρησιμοποιείται για την ανακατεύθυνση αιτήσεων \textlatin{DNS}, που αφορούν συγκεκριμένο \textlatin{domain name}, σε συγκεκριμένο διακομιστή. Η ανακατεύθυνση αυτή βρίσκει εφαρμογή σε \textlatin{sub-domains}, τα οποία βρίσκονται μόνο εντός ενός εσωτερικού δικτύου (\textlatin{corporate WAN}).
+\item Ο υποφάκελος \textlatin{\texttt{/etc/unbound/keys.d}} χρησιμοποιείται για την προσθήκη \textlatin{trust anchors} σε ένα \textlatin{domain name}. Αυτό απαιτείται όταν ένα εσωτερικό \textlatin{domain name} είναι υπογεγραμμένο ψηφιακά από το \textlatin{DNSSEC}, αλλά δεν υπάρχει εγγραφή στους δημόσιους \textlatin{DNS} διακομιστές, ώστε να δημιουργηθεί το απαραίτητο μονοπάτι εμπιστοσύνης. Άλλη μια περίπτωση στην οποία χρησιμοποιείται, είναι όταν το εσωτερικό \textlatin{domain name} είναι υπογεγραμμένο με διαφορετικό \textlatin{DNSKEY} από το αντίστοιχο \textlatin{domain name}, που είναι δημοσίως γνωστό εκτός του εσωτερικού δικτύου.
+\item Ο υποφάκελος \textlatin{\texttt{/etc/unbound/local.d}} χρησιμοποιείται για να προσθέσει στατικές \textlatin{DNS} αντιστοιχίσεις. Αυτό μπορεί να χρησιμοποιηθεί και για τη δημιουργία λιστών αποκλεισμού (\textlatin{blacklists}). Τα δεδομένα αυτά θα επιστρέφονται στους πελάτες, αλλά δε θα είναι ψηφιακά υπογεγραμμένα από \textlatin{DNSSEC}.
+\end{itemize}
+
+Για να διαπιστώσετε εάν λειτουργεί σωστά το \textlatin{DNSSEC}, μπορείτε να χρησιμοποιήσετε το εργαλείο \textlatin{dig}, από το πακέτο \textlatin{bind-utils}. Άλλα χρήσιμα εργαλεία είναι το \textlatin{drill} (πακέτο \textlatin{ldns}) και \textlatin{unbound-host} (πακέτο \textlatin{unbound}). Τα παλαιότερα εργαλεία \textlatin{nslookup} και \textlatin{host} είναι ξεπερασμένα και δε πρέπει να χρησιμοποιούνται. Για να αποστείλετε μια αίτηση \textlatin{DNSSEC} με \textlatin{dig}, πρέπει να προσθέσετε την παράμετρο \textlatin{+dnssec}:
+\selectlanguage{english}
+\begin{verbatim}
+~]$ dig +dnssec uom.gr
+\end{verbatim}
+\selectlanguage{greek}
+
+\section{Εφαρμογή Επιπλέον Ρυθμίσεων Ασφαλείας}
+Για να εξασφαλιστεί η ακεραιότητα του συστήματος, είναι αναγκαία η εφαρμογή κάποιων επιπλέον μέτρων ασφαλείας:
+
+\subsection{Αποστολή Αρχείων Καταγραφής σε ένα Συγκεντρωτικό Σύστημα Καταγραφής Συμβάντων}\label{splunk}
+Για την εγκατάσταση του \textlatin{splunk forwarder}, εκτελέστε τις παρακάτω εντολές ως \textlatin{root}:
+\selectlanguage{english}
+\begin{verbatim}
+~]# curl -RO https://download.splunk.com/products/
+universalforwarder/releases/6.4.2/linux/
+splunkforwarder-6.4.2-00f5bb3fa822-linux-2.6-amd64.deb
+
+~]# dpkg -i ./splunkforwarder-6.4.2-00f5bb3fa822-linux-2.6-amd64.deb
+
+~]# /opt/splunkforwarder/bin/splunk enable boot-start
+~]# /opt/splunkforwarder/bin/splunk add monitor /var/log/
+~]# /opt/splunkforwarder/bin/splunk add forward-server hostname.domain:
+9997
+~]# service splunk start
+\end{verbatim}
+\selectlanguage{greek}
+Όπου \textlatin{'hostname.domain'} είναι το \textlatin{FQDN} ή \textlatin{IP} του διακομιστή \textlatin{splunk} (για παράδειγμα \textlatin{indexer.splunk.com}). Όλα τα αρχεία καταγραφής μπορούν να αναλυθούν μέσω του \textlatin{splunk web interface}.
+
+\subsection{Εγκατάσταση Λογισμικού Προστασίας από Ιούς}
+Δημοφιλείς επιλογές τέτοιου λογισμικού είναι:~\cite{Ubu:01}:
+\begin{itemize}
+\item \textlatin{BitDefender} (εμπορικό)
+\item \textlatin{ClamAV}
+\end{itemize}
+Για την εγκατάσταση του \textlatin{clamav antivirus}, εκτελέστε τις παρακάτω εντολές ως \textlatin{root}:
+\selectlanguage{english}
+\begin{verbatim}
+~]# apt-get install clamav clamdscan clamav-daemon
+~]# service clamav-daemon start
+~]# freshclam
+~]# service clamav-freshclam start
+\end{verbatim}
+\selectlanguage{greek}
+Για να ρυθμίσετε το \textlatin{clamav}, ώστε να ελέγχει ένα συγκεκριμένο φάκελο καθημερινά (εν προκειμένω το \textlatin{/home}), δημιουργήστε το ακόλουθο αρχείο:
+\selectlanguage{english}
+\begin{verbatim}
+~]# echo > /etc/cron.daily/manual_clamscan << EOF
+#!/bin/bash
+SCAN_DIR="/home"
+LOG_FILE="/var/log/clamav/manual_clamscan.log"
+/usr/bin/clamscan -i -r $SCAN_DIR >> $LOG_FILE
+EOF
+
+~]# chmod +x /etc/cron.daily/manual_clamscan
+\end{verbatim}
+\selectlanguage{greek}
+
+\subsection{Εξασφάλιση της Ακεραιότητας των Αρχείων}
+Για την εξασφάλιση της ακεραιότητας των αρχείων, μετά την εγκατάσταση όλων των απαραίτητων πακέτων για τη λειτουργία του συστήματος, εγκαταστείστε ένα από τα παρακάτω~\cite{San:01}:
+\begin{itemize}
+\item \textlatin{Tripwire} (τελευταία ενημέρωση 2013)
+\item \textlatin{AIDE (Advanced Intrusion Detection Environment)}
+\item \textlatin{OSSEC}
+\item \textlatin{Samhain}
+\end{itemize}
+
+Για την εγκατάσταση του \textlatin{AIDE} εκτελέστε τις παρακάτω εντολές:
+\selectlanguage{english}
+\begin{verbatim}
+~]# apt-get install aide-common
+~]# sed -i 's/^Checksums =.*/Checksums = sha512/' /etc/aide/aide.conf
+~]# aideinit --yes
+\end{verbatim}
+\selectlanguage{greek}
+
+Κατά περιόδους είναι χρήσιμο να ελέγχεται η ακεραιότητα των εγκατεστημένων πακέτων, με τη χρήση του διαχειριστή πακέτων:
+\selectlanguage{english}
+\begin{verbatim}
+~]# debsums | grep -v OK
+\end{verbatim}
+\selectlanguage{greek}
+
+\subsection{Εγκατάσταση Λογισμικού Ανίχνευσης \textlatin{Rootkit}}
+Διαθέσιμες επιλογές όπως παρακάτω~\cite{Ubu:01}:
+\begin{itemize}
+\item \textlatin{Rkhunter} (τελευταία ενημέρωση 2013)
+\item \textlatin{OSSEC}
+\end{itemize}
+για την εγκατάσταση του \textlatin{Rkhunder} εκτελέστε τις παρακάτω εντολές:
+\selectlanguage{english}
+\begin{verbatim}
+~]# apt-get install rkhunter
+~]# vi /etc/default/rkhunter
+\end{verbatim}
+\selectlanguage{greek}
+Τροποποιήστε τις επόμενες γραμμές για να ενεργοποιήσετε το \textlatin{Rkhunter}:
+\selectlanguage{english}
+\begin{verbatim}
+CRON_DAILY_RUN="yes"
+APT_AUTOGEN="yes"
+\end{verbatim}
+\selectlanguage{greek}
+Τέλος εκτελέστε:
+\selectlanguage{english}
+\begin{verbatim}
+~]# rkhunter --propupd
+\end{verbatim}
+\selectlanguage{greek}
+
+\subsection{Εγκατάσταση Λογισμικού \textlatin{Intrusion Detection}}
+Διαθέσιμες επιλογές όπως παρακάτω:
+\begin{itemize}
+\item \textlatin{Snort} με \textlatin{acidbase}
+\item \textlatin{OSSEC}
+\item \textlatin{fail2ban}
+\end{itemize}
+Ως μια ολοκληρωμένη λύση, το \textlatin{OSSEC} είναι δυνατό να εγκατασταθεί ώστε να εξασφαλίσει την ακεραιότητα του συστήματος. Συνίσταται η χρησιμοποίηση του \textlatin{OSSEC} σε συνδυασμό με ένα συγκεντρωτικό \textlatin{security manager}, όπως το \textlatin{AlienVault OSSIM}. Για την εγκατάσταση του \textlatin{OSSEC agent}, εκτελέστε τις παρακάτω εντολές ως χρήστης \textlatin{root}:
+\selectlanguage{english}
+\begin{verbatim}
+~]# apt-key adv --fetch-keys http://ossec.wazuh.com/repos/apt/conf/
+ossec-key.gpg.key
+~]# echo "deb http://ossec.wazuh.com/repos/apt/ubuntu xenial main" >> 
+/etc/apt/sources.list
+~]# apt-get update
+~]# apt-get install ossec-hids ossec-hids-agent
+\end{verbatim}
+\selectlanguage{greek}
+Εξάγετε ένα κλειδί από το \textlatin{OSSIM} και σημειώστε το, μαζί με την διεύθυνση \textlatin{IP} του \textlatin{OSSIM server}. Ενημερώστε στο μηχάνημα πελάτη το αρχείο \textlatin{\texttt{/var/ossec/etc/ossec.conf}} με την διεύθυνση του \textlatin{OSSIM server}. Τέλος, στο μηχάνημα πελάτη, εκτελέστε τις παρακάτω εντολές:
+\selectlanguage{english}
+\begin{verbatim}
+~]# /var/ossec/bin/ossec-configure
+\end{verbatim}
+\selectlanguage{greek}
+Ακολουθήστε τις οδηγίες και εισάγετε το προαναφερθέν κλειδί, όταν σας ζητηθεί. Τέλος, εκκινήστε την υπηρεσία.
+\selectlanguage{english}
+\begin{verbatim}
+~]# /var/ossec/bin/ossec-control start
+\end{verbatim}
+\selectlanguage{greek}
+
+\subsection{Εποπτεία Συστήματος (\textlatin{System Audit})}
+Ο έλεγχος συστήματος (\textlatin{Linux Audit System}) παρέχει έναν τρόπο καταγραφής των πληροφοριών που έχουν σχέση με την ασφάλεια στο σύστημα, σύμφωνα με καταγεγραμμένους κανόνες. Το \textlatin{Linux Audit} παράγει αρχεία καταγραφής, ώστε να περιλάβει όσο το δυνατό περισσότερες πληροφορίες για τα συμβάντα στο σύστημα. Παραδείγματα συμβάντων που ελέγχονται, όπως παρακάτω\cite{Red:01}:
+
+\paragraph{Παρακολούθηση πρόσβασης στα αρχεία}
+Είναι δυνατός ο έλεγχος εάν σε ένα αρχείο ή υποφάκελο ζητήθηκε πρόσβαση, εάν αυτό αλλοιώθηκε, εκτελέσθηκε ή μεταβλήθηκαν οι ιδιότητές του (\textlatin{attributes}). Αυτό είναι απαραίτητο για την ανίχνευση της πρόσβασης σε κρίσιμα αρχεία και εφόσον αυτά έχουν αλλοιωθεί, για την δυνατότητα διερευνησης του συμβάντος.
+
+\paragraph{Παρακολούθηση κλήσεων συστήματος}
+Το \textlatin{Linux Audit} είναι δυνατό να ρυθμιστεί ώστε να παράγει μια εγγραφή στο σύστημα καταγραφής του συστήματος, κάθε φορά που μια συγκεκριμένη κλήση συστήματος ενεργοποιείται. Αυτό για παράδειγμα, μπορεί να χρησιμοποιηθεί για την παρακολούθηση των αλλαγών στην ώρα συστήματος, ελέγχοντας τις κλήσεις συστήματος \textlatin{\texttt{settimeofday}}, \textlatin{\texttt{clock\_adjtime}}, και άλλες που έχουν σχέση με το χρόνο.
+
+\paragraph{Καταγραφή των εντολών του χρήστη}
+Καθώς ο έλεγχος μπορεί να γίνει πάνω στο ποια αρχεία εκτελούνται, ένας αριθμός από κανόνες μπορεί να καθοριστεί, για να εποπτεύει κάθε εκτέλεση μιας συγκεκριμένης εντολής. Για παράδειγμα μπορεί να οριστεί ένας κανόνας για την παρακολούθηση της εκτέλεσης οποιουδήποτε εκτελέσιμου βρίσκεται στον υποφάκελο \textlatin{\texttt{/bin}}. Οι λαμβάνουσες εγγραφές στο αρχείο καταγραφής, μπορούν να αναζητηθούν για πληροφορίες με βάση το \textlatin{user ID}, ώστε να υπάρχει εποπτεία του τι εκτέλεσε κάθε χρήστης.
+
+\paragraph{Καταγραφή συμβάντων ασφαλείας}
+Η εποπτεία συστήματος μπορεί να παραμετροποιηθεί ώστε να καταγράφει τις αποτυχημένες προσπάθειες εισόδου στο σύστημα και να παρέχει επιπρόσθετες πληροφορίες για το χρήστη που επιχείρησε να εισέλθει.
+
+\paragraph{Αναζήτηση για συμβάντα}
+Η εποπτεία συστήματος  παρέχει το εργαλείο \textlatin{\texttt{ausearch}}, το οποίο μπορεί να χρησιμοποιηθεί για να φιλτράρει τις εγγραφές του αρχείου καταγραφής και να προβάλει πληροφορίες με βάση συγκεκριμένα κριτήρια.
+
+\paragraph{Εξαγωγή περιληπτικών αναφορών}
+Το εργαλείο \textlatin{\texttt{aureport}} είναι δυνατό να χρησιμοποιηθεί για να παράγει, μεταξύ άλλων, ημερήσιες αναφορές για τα καταγεγραμμένα συμβάντα. Ο διαχειριστής συστήματος, είναι σε θέση να ερευνήσει περαιτέρω τυχόν ύποπτες ενέργειες, με την ανάλυση των αναφορών αυτών.
+
+\paragraph{Παρακολούθηση δικτυακής πρόσβασης}
+Τα εργαλεία \textlatin{\texttt{iptables}} και \textlatin{\texttt{ebtables}} μπορούν να παραμετροποιηθούν ώστε εκκινούν \textlatin{Audit Events}, επιτρέποντας στους διαχειριστές συστήματος να παρακολουθούν την δικτυακή πρόσβαση.
+
+\subsubsection{Εγκατάσταση των Πακέτων \textlatin{Audit}}
+Για την εγκατάσταση του \textlatin{Audit System}, εκτελέστε τις παρακάτω εντολές ως υπερχρήστης:
+\selectlanguage{english}
+\begin{verbatim}
+~]# apt-get install auditd
+\end{verbatim}
+\selectlanguage{greek}
+
+\subsubsection{Προρυθμισμένα Αρχεία Κανόνων \textlatin{Audit}}
+Στον υποφάκελο \textlatin{\texttt{/usr/share/doc/auditd/examples/}}, το πακέτο \textlatin{audit} παρέχει ένα σύνολο από αρχεία με προρυθμισμένους κανόνες, σύμφωνα με συγκεκριμένα πιστοποιημένα πρότυπα. Για να χρησιμοποιήσετε τα παραπάνω αρχεία, δημιουργήστε ένα αντίγραφο ασφαλείας από το το αρχικό αρχείο \textlatin{\texttt{/etc/audit/audit.rules}}, αντικαταστήσετε το με το αρχείο της επιλογής σας, από τον παραπάνω υποφάκελο και ενεργοποιήστε την υπηρεσία:
+\selectlanguage{english}
+\begin{verbatim}
+~]# cp /etc/audit/audit.rules /etc/audit/audit.rules_backup
+~]# cp /usr/share/doc/auditd/examples/stig.rules.gz /etc/audit/
+audit.rules.gz
+~]# gunzip /etc/audit/audit.rules.gz
+~]# systemctl enable auditd
+\end{verbatim}
+\selectlanguage{greek}
+
+\chapter{Εργαλεία για Ασφάλιση του Συστήματος}
+Για τον έλεγχο ασφαλείας του συστήματος ή την επιπλέον ενίσχυσή του, τα επόμενα εργαλεία μπορούν να χρησιμοποιηθούν.
+
+\section{\textlatin{Bastille Linux}}
+Το \textlatin{Bastille Linux} είναι σε θέση να ελέγξει και να αναφέρει το επίπεδο ασφαλείας που παρέχει το σύστημα. Μπορεί επίσης να καταγράφει ζητήματα ασφαλείας, ακόμα και να επιδιορθώνει μη-ασφαλείς παραμετροποιήσεις.
+
+Το πακέτο του \textlatin{Bastille Linux} δεν περιλαμβάνεται σε κανένα \textlatin{repository} από το \textlatin{Ubuntu 12.04LTS} και μετά. Ένας τρόπος για να εγκαταστήσετε το πακέτο, είναι να εγκαταστήσετε τα προαπαιτούμενα και να κατεβάσετε το \textlatin{deb} αρχείο από το \textlatin{\url{http://packages.ubuntu.com}}.
+\selectlanguage{english}
+\begin{verbatim}
+~]# apt-get install libcurses-perl
+~]# curl -RO http://gr.archive.ubuntu.com/ubuntu/pool/universe/b/
+bastille/bastille_3.0.9-13ubuntu1_all.deb
+~]# dpkg -i ./bastille_3.0.9-13ubuntu1_all.deb
+\end{verbatim}
+\selectlanguage{greek}
+Το πακέτο περιλαμβάνει μια διεπαφή χρήστη και ένα μηχανισμό ρυθμίσεων. Η πρωτεύουσα διεπαφή χρήστη είναι μέσω \textlatin{X - Perl/Tk}, ενώ υπάρχει και μια \textlatin{Curses} διεπαφή γραμμής εντολών. Το \textlatin{Bastille Linux} έχει δυο τρόπους λειτουργίας:
+\begin{itemize}
+\item Αλληλεπιδραστικός: Το \textlatin{Bastille Linux} θέτει στο χρήστη συγκεκριμένες ερωτήσεις με επεξηγήσεις για την αντίστοιχη ρύθμιση και ρυθμίζει ασφαλώς το σύστημα με βάση τις απαντήσεις του χρήστη.
+\item Μη-Αλληλεπιδραστικός: Ο χρήστης μπορεί να τροποποιήσει ένα αρχείο ρυθμίσεων, το οποίο καθορίζει τον τρόπο που το \textlatin{Bastille Linux} εφαρμόζει τις πολιτικές ασφαλείας. Αυτό είναι βολικό για την αυτοματοποιημένη ρύθμιση πολλών Η/Υ.
+\end{itemize}
+Οι αλλαγές που κάνει το \textlatin{Bastille Linux} μπορούν να προκαλέσουν ζητήματα ορθής λειτουργίας ή να καταστήσουν το σύστημα μη αποκρίσιμο. Ο διαχειριστής συστήματος πρέπει να έχει καλή κατανόηση των αλλαγών που συμβαίνουν στο σύστημα και πως κάθε μια μπορεί να επηρεάσει την ορθή λειτουργία του.
+
+Εκτός από τα παραπάνω, θα πρέπει να σημειωθεί ότι η ανάπτυξη του \textlatin{bastille-linux (bastille-unix} από το 2007 και μετά~\cite{Bas:01}) έχει σταματήσει από το 2008. Έτσι το λογισμικό αυτό μπορεί να χρησιμοποιηθεί κυρίως ως εργαλείο παραγωγής αναφορών για την ασφάλεια του συστήματος:
+\selectlanguage{english}
+\begin{verbatim}
+~]# bastille --assess
+\end{verbatim}
+\selectlanguage{greek}
+ή
+\selectlanguage{english}
+\begin{verbatim}
+~]# bastille --assessnobrowser
+\end{verbatim}
+\selectlanguage{greek}
+Η δεύτερη σύνταξη της εντολής εκτελεί το \textlatin{Assessment mode}, χωρίς να εμφανίζει την αναφορά. Το \textlatin{Bastille Linux} δημιουργεί τρεις αναφορές, τις οποίες αποθηκεύει στο φάκελο \textlatin{\texttt{/var/log/Bastille/Assessment}}:
+\begin{itemize}
+\item \textlatin{audit-report.html - Full HTML} με \textlatin{javascript}
+\item \textlatin{audit-report.txt - Text-only version}
+\item \textlatin{audit-log.txt - Machine-parseable text version}
+\end{itemize}
+Η παραγόμενη αναφορά περιέχει λεπτομέρεις παρατηρήσεις και μια βαθμολογία.
+
+\section{Αξιολόγηση του Συστήματος με το \textlatin{SCAP Security Guide}}\label{openscap}
+Το πακέτο \textlatin{SCAP Security Guide (SSG)} περιλαμβάνει τις τελευταίες συστάσεις ασφαλείας και πληροφορίες για γνωστές ευπάθειες. Για την εγκατάσταση του \textlatin{SCAP Security Guide} στο σύστημα, εκτελούμε τις παρακάτω εντολές ως υπερχρήστης:
+\selectlanguage{english}
+\begin{verbatim}
+~]# apt-get install libopenscap8
+\end{verbatim}
+\selectlanguage{greek}
+Για την παρατήρηση του περιεχομένου του \textlatin{scap-security-guide}, χρησιμοποιείται ο διακόπτης \textlatin{\texttt{info}}. Το \textlatin{Ubuntu} δεν έχει διαθέσιμα \textlatin{openscap definitions}, οπότε μπορούν να χρησιμοποιηθούν αυτά του \textlatin{Debian 8}.
+\selectlanguage{english}
+\begin{verbatim}
+~]$ curl -RO https://www.debian.org/security/oval/oval-definitions-2016.
+xml
+~]$ oscap info ./oval-definitions-2016.xml
+\end{verbatim}
+\selectlanguage{greek}
+Το εξαγόμενο αυτής της εντολής είναι μια περιγραφή των γνωστών ευπαθειών ασφαλείας. Χάριν παραδείγματος, η παρακάτω εντολή αξιολογεί το σύστημα χρησιμοποιώντας ένα \textlatin{SCAP} προφίλ για \textlatin{Debian 8}:
+\selectlanguage{english}
+\begin{verbatim}
+~]$ oscap oval eval \
+--results ssg-debian8-oval-result.xml \
+--report ssg-debian8-report.html \
+./oval-definitions-2016.xml
+\end{verbatim}
+\selectlanguage{greek}
+Μετά την εφαρμογή του \textlatin{bash script} που συνοδεύει το κείμενο (βλ. Κεφ.~\ref{script}) και την αξιολόγηση του συστήματος, η παραχθείσα αναφορά δεν έδειξε ευπάθειες.
+
+\chapter{\textlatin{Bash Script} για Εφαρμογή Πολιτικών Ασφαλείας}\label{script}
+Για την εφαρμογή των πολιτικών ασφαλείας, οι οποίες αναφέρθηκαν παραπάνω, αναπτύχθηκε ένα \textlatin{bash script}, οποίο κάνει τις ακόλουθες αλλαγές στο σύστημα:
+\begin{itemize}
+\item Εγκατάσταση απαιτούμενων πακέτων
+\item Παραμετροποίηση αυτόματων εγκαταστάσεων ενημερώσεων ασφαλείας με \textlatin{cronjob}
+\item Επιβολή του \textlatin{AppArmor}
+\item Ασφαλή ρύθμιση του \textlatin{bootloader}
+\item Απενεργοποίηση του \textlatin{AppPort}
+\item Απενεργοποίηση μη απαραίτητων υπηρεσιών 
+\item Απενεργοποίηση μη χρησιμοποιούμενων αρθρωμάτων πυρήνα ΛΣ
+\item Απενεργοποίηση μη χρησιμοποιούμενων συστημάτων αρχείων
+\item Ασφαλή ρύθμιση των προσαρτήσεων τόμων
+\item Απενεργοποίηση επικινδύνων δικτυακών πρωτοκόλλων
+\item Απενεργοποίηση δημιουργίας \textlatin{core dumps}
+\item Ρύθμιση των \textlatin{sysctl} παραμέτρων
+\item Ρύθμιση των \textlatin{security limits} για τους χρήστες.
+\item Αφαίρεση του \textlatin{suid bit} από συγκεκριμένα εκτελέσιμα
+\item Ρύθμιση του \textlatin{umask} συστήματος σε 027
+\item Απενεργοποίηση του συνδυασμού πλήκτρων \textlatin{CTRL+ALT+DEL}
+\item Απενεργοποίηση των \textlatin{root logins} - Κλείδωμα του χρήστη \textlatin{root}
+\item Απενεργοποίηση των \textlatin{Host overrides}
+\item Ρύθμιση των \textlatin{Banners}
+\item Ρύθμιση των \textlatin{TCP Wrappers}
+\item Εφαρμογή πολιτικών σε λογαριασμούς και κωδικούς πρόσβασης
+\item Αφαίρεση μη αναγκαιούντων χρηστών
+\item Ασφαλή ρύθμιση του \textlatin{Apache Server}
+\item Ασφαλή ρύθμιση του \textlatin{NFS Server}
+\item Ασφαλή ρύθμιση του \textlatin{SSHD server}
+\item Απαγόρευση της εκτέλεσης \textlatin{cronjobs} για χρήστες εκτός του \textlatin{root}
+\item Ρύθμιση του \textlatin{UFW}
+\item Απενεργοποίηση \textlatin{IPV6}
+\item Ασφαλή ρύθμιση των \textlatin{DNS resolvers}
+\item Ασφαλή ρύθμιση του \textlatin{NTP Client}
+\item Ρύθμιση του \textlatin{logrotate}
+\item Επιβολή κανόνων \textlatin{auditd}
+\item Ενεργοποίηση \textlatin{RKHUNTER}
+\item Ενεργοποίηση \textlatin{CLAMAV}
+\item Ρύθμιση \textlatin{AIDE}
+\end{itemize}
+Όλες οι ρυθμίσεις καθορίζονται στην αρχή του \textlatin{bash script} με τη μορφή μεταβλητών. Οι περισσότεροι χρήστες απαιτείται να αλλάξουν συνήθως μόνο τις μεταβλητές \textlatin{'SERVER'} και \textlatin{'VERBOSE'}. Η μεταβλητή \textlatin{'SERVER'} ελέγχεται από το \textlatin{bash script}, ώστε να εφαρμόσει τις κατάλληλες ρυθμίσεις για μια εγκατάσταση \textlatin{server} ή \textlatin{desktop}. Οι λοιπές μεταβλητές πρέπει να αλλάζονται μόνο από έμπειρους χρήστες, καθώς έχουν τυπικές τιμές.
+
+Επεμβάσεις οι οποίες απαίτησαν αλληλεπίδραση με το χρήστη, όπως η εισαγωγή κλειδιών από τον \textlatin{OSSIM Server} ή η ρύθμιση του \textlatin{Splunk forwarder}, παραλήφθηκαν σκοπίμως, αλλά ο αναγνώστης είναι σε θέση να εφαρμόσει αυτές τις πολιτικές ασφαλείας αντιγράφοντας τις αντίστοιχες εντολές από το κείμενο, με αλλαγές όπου απαιτείται.
+
+\section{Αξιολόγηση Συστήματος}
+Μετά την εφαρμογή του \textlatin{bash script}, το σύστημα αξιολογήθηκε με τη χρήση \textlatin{openscap profiles} για \textlatin{debian 8}, όπως περιγράφηκε στο τμήμα~\ref{openscap}, χωρίς να βρεθούν ευπάθειες.
+
+Το σύστημα ελέγχθηκε επίσης με τα λογισμικά \textlatin{Nessus} και \textlatin{Greenbone Security Assistant} και έλαβε βαθμολογία 85-90\% με ήσσονος σημασίας σχόλια. Το εν λόγω \textlatin{bash script} βρίσκεται στο παράρτημα~\ref{AppA} του παρόντος.
+
+\chapter{Συμπεράσματα}\label{conclusions}
+Στο παρόν πόνημα, καταβλήθηκε προσπάθεια περιγραφής σε αδρές γραμμές, των πιο χρήσιμων συμβουλών ασφαλείας, για μια βασική εγκατάσταση ΛΣ \textlatin{Ubuntu Linux}. Η λίστα δεν είναι εξαντλητική και περιλαμβάνει μια αρχική βάση. Ένα \textlatin{bash script} αναπτύχθηκε για την εφαρμογή των ρυθμίσεων, που παρουσιάστηκαν, με αυτόματο τρόπο. Αναγκαία κρίνεται η επιβολή και άλλων μέτρων ασφαλείας που καθορίζονται από τις ιδιαιτερότητες του περιβάλλοντος και των υποδομών.
+
+\begin{appendices}
+\chapter{Κώδικας \textlatin{Bash Script}}\label{AppA}
+\begin{scriptsize}
+\selectlanguage{english}
+\begin{verbatim}
+#!/usr/bin/env bash
+################################################################################
+################################################################################
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+################################################################################
+################################################################################
+# Script tries to harden a default setup of Ubuntu Server 16.04LTS
+# All configuration parameters lie in the begining of the file, 
+# in terms of global variables (Capitalized). Fell free to change
+# the configuration according to your needs. Only change if you know
+# what you're doing..You have been warned!
+################################################################################
+# CONFIGURATION STARTS HERE
+################################################################################
+ADDUSER='/etc/adduser.conf'
+APACHE2DFILE='/etc/apache2/conf-available/custom_secure.conf'
+AUDITDCONF='/etc/audit/auditd.conf'
+AUDITRULES='/etc/audit/rules.d/hardening.rules'
+COMMONPASSWD='/etc/pam.d/common-password'
+COMMONACCOUNT='/etc/pam.d/common-account'
+COMMONAUTH='/etc/pam.d/common-auth'
+COREDUMPCONF='/etc/systemd/coredump.conf'
+DEBIAN_FRONTEND='noninteractive'
+DEFAULTGRUB='/etc/default/grub'
+DISABLEFS='/etc/modprobe.d/disablemnt.conf'
+DISABLEMOD='/etc/modprobe.d/disablemod.conf'
+DISABLENET='/etc/modprobe.d/disablenet.conf'
+EXPECT='/usr/bin/expect'
+FW_LOCAL='127.0.0.1'
+GRUB_PASSPHRASE='password'
+GRUB_SUPERUSER='myuser'
+JOURNALDCONF='/etc/systemd/journald.conf'
+LIMITSCONF='/etc/security/limits.conf'
+LOGINDCONF='/etc/systemd/logind.conf'
+LOGINDEFS='/etc/login.defs'
+LOGROTATE='/etc/logrotate.conf'
+MKPASSWD='/usr/bin/grub-mkpasswd-pbkdf2'
+MOD='bluetooth firewire-core net-pf-31 soundcore thunderbolt usb-midi'
+MODSEC='/etc/modsecurity/modsecurity.conf'
+PACKAGES="acct aide-common apache2 apparmor-profiles apparmor-utils auditd \
+clamav clamdscan clamav-daemon debsums expect fail2ban git haveged \
+libapache2-mod-security2 libapache2-mod-evasive libpam-cracklib \
+libpam-tmpdir nfs-kernel-server openssh-server rkhunter samba $VM"
+PAMLOGIN='/etc/pam.d/login'
+RESOLVEDCONF='/etc/systemd/resolved.conf'
+RKHUNTERCONF='/etc/default/rkhunter'
+SECURITYACCESS='/etc/security/access.conf'
+SERVER='Y'
+SSHDFILE='/etc/ssh/sshd_config'
+SSH_GROUPS='sudo'
+SYSCTL='/etc/sysctl.conf'
+SYSTEMCONF='/etc/systemd/system.conf'
+TERM='linux'
+TIMESYNCD='/etc/systemd/timesyncd.conf'
+UFWDEFAULT='/etc/default/ufw'
+USERADD='/etc/default/useradd'
+USERCONF='/etc/systemd/user.conf'
+UNW_PROT='dccp sctp rds tipc'
+UNW_SERVICES='rpcbind'
+UNW_FS='cramfs freevxfs jffs2 hfs hfsplus squashfs udf vfat'
+VERBOSE='Y'
+################################################################################
+# CONFIGURATION ENDS HERE
+# Do not change anything below this line!
+################################################################################
+# Prepare ENV (OK)
+export TERM
+export DEBIAN_FRONTEND
+################################################################################
+# Check that we have bare minimum..(OK)
+if [ $EUID -ne 0 ]; then
+    echo "This script must be run with root privileges."
+    echo
+    exit 1
+fi
+
+if ! lsb_release -i | grep 'Ubuntu'; then
+    echo "Unsupported Linux distribution. Only Ubuntu Supported"
+    echo
+    exit 1
+fi
+
+if ! ps -p $$ | grep -i bash; then
+    echo "Please install bash to continue.."
+    echo
+    exit 1
+fi
+
+if ! [ -x "$(which systemctl)" ]; then
+	echo "systemctl required. Unsupported setup.."
+    echo
+	exit 1
+fi
+
+if ! test -f "$UFWDEFAULT"; then
+    echo "$UFWDEFAULT firewall config file not found."
+
+    if ! dpkg -l | grep ufw 2> /dev/null 1>&2; then
+    	echo 'Please install ufw package to continue.'
+    fi
+    exit 1
+fi
+
+echo "End of Pre-Flight checks.."
+# End of Pre-Flight checks..
+################################################################################
+# Set paths(OK)
+echo "Setting paths..."
+
+sed -i 's/PATH=.*/PATH=\"\/usr\/local\/bin:\/usr\/bin:\/bin"/' /etc/environment
+
+cat > /etc/profile.d/initpath.sh <<EOF
+#!/bin/bash
+
+if [[ $EUID -eq 0 ]];
+  then
+    export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+  else
+    export PATH=/usr/local/bin:/usr/bin:/bin
+fi
+EOF
+
+chown root:root /etc/profile.d/initpath.sh
+chmod 0644 /etc/profile.d/initpath.sh
+################################################################################
+# Install needed packages(OK)
+if [[ $VERBOSE == "Y" ]]; then
+    APT_ENV='-y'
+else
+    APT_ENV='-qq -y'
+fi
+
+APT="apt-get $APT_ENV"
+
+echo "Updating the package index files..."
+$APT update
+
+echo "Upgrading installed packages..."
+$APT upgrade
+
+echo "Installing base packages..."
+
+# Are we running a VM?
+if dmidecode -q --type system | grep -i vmware; then
+    VM="open-vm-tools"
+fi
+
+if dmidecode -q --type system | grep -i virtualbox; then
+    VM="virtualbox-guest-dkms virtualbox-guest-utils"
+fi
+
+for deb in $PACKAGES; do
+    $APT install --no-install-recommends "$deb"
+done
+################################################################################
+# Install security updates via cronjob(OK)
+cat > /etc/cron.weekly/apt-security-updates <<EOF
+echo "**************" >> /var/log/apt-security-updates
+date >> /var/log/apt-security-updates
+aptitude update >> /var/log/apt-security-updates
+aptitude safe-upgrade -o Aptitude::Delete-Unused=false --assume-yes --target-release \
+`lsb_release -cs`-security >> /var/log/apt-security-updates
+echo "Security updates (if any) installed"
+EOF
+
+chmod +x /etc/cron.weekly/apt-security-updates
+
+cat > /etc/logrotate.d/apt-security-updates <<EOF
+/var/log/apt-security-updates {
+        rotate 2
+        weekly
+        size 250k
+        compress
+        notifempty
+}
+EOF
+################################################################################
+# Enforce AppArmor(OK)
+echo "Enforcing apparmor profiles..."
+
+find /etc/apparmor.d/ -maxdepth 1 -type f -exec aa-enforce {} \;
+aa-complain /etc/apparmor.d/usr.sbin.rsyslogd
+################################################################################
+# Secure bootloader(OK)
+echo "Securing bootloader..."
+
+expect_script(){
+    cat <<EOF
+    log_user 0
+    spawn  ${MKPASSWD}
+    sleep 0.33
+    expect  "Enter password: " {
+        send "$GRUB_PASSPHRASE"
+        send "\n"
+    }
+    sleep 0.33
+    expect "Reenter password: " {
+        send "$GRUB_PASSPHRASE"
+        send "\n"
+    }
+    sleep 0.33
+    expect eof {
+        puts "\$expect_out(buffer)"
+    }
+    exit 0
+EOF
+}
+
+if [ -n "$GRUB_PASSPHRASE" ]; then
+    sed -i 's/^GRUB_CMDLINE_LINUX=.*/GRUB_CMDLINE_LINUX="--users $GRUB_SUPERUSER"/' "$DEFAULTGRUB"
+    echo "set superusers=$GRUB_SUPERUSER" >> /etc/grub.d/40_custom
+    GRUB_PASS=$(expect_script "$1" | $EXPECT | sed -e "/^\r$/d" -e "/^$/d" -e "s/.* \(.*\)/\1/")
+    echo "password_pbkdf2 $GRUB_SUPERUSER $GRUB_PASS" >> /etc/grub.d/40_custom
+    echo 'export superusers' >> /etc/grub.d/40_custom
+fi
+################################################################################
+# Disable AppPort(OK)
+echo "Disabling apport"
+
+sed -i 's/enabled=.*/enabled=0/' /etc/default/apport
+systemctl mask apport.service
+
+if [[ $VERBOSE == "Y" ]]; then
+    systemctl status apport.service --no-pager
+    echo
+fi
+################################################################################
+# Disable unwanted services(OK)
+echo "Disabling unwanted services"
+
+for disable in $UNW_SERVICES; do
+    systemctl disable $disable
+done
+################################################################################
+# Disable unneeded kernel modules(OK)
+echo "Disabling unwanted kernel modules"
+
+for disable in $MOD; do
+    if ! grep -q "$disable" "$DISABLEMOD" 2> /dev/null; then
+        echo "install $disable /bin/true" >> "$DISABLEMOD"
+    fi
+done
+
+if [[ $SERVER == "Y" ]]; then
+    echo "install usb-storage /bin/true" >> "$DISABLEMOD"
+fi
+################################################################################
+# Disable unneeded file systems(OK)
+echo "Disabling unneeded file systems"
+for disable in $UNW_FS; do
+    if ! grep -q "$disable" "$DISABLEFS" 2> /dev/null; then
+        echo "install $disable /bin/true" >> "$DISABLEFS"
+    fi
+done
+################################################################################
+# Securing Mounts(OK)
+echo "Securing mounts"
+
+cat > /etc/systemd/system/tmp.mount <<EOF
+# /etc/systemd/system/default.target.wants/tmp.mount -> ../tmp.mount
+
+[Unit]
+Description=Temporary Directory
+Documentation=man:hier(7)
+Before=local-fs.target
+
+[Mount]
+What=tmpfs
+Where=/tmp
+Type=tmpfs
+Options=mode=1777,strictatime,nosuid,nodev
+EOF
+
+sed -i '/floppy/d' /etc/fstab
+
+if [ -e /etc/systemd/system/tmp.mount ]; then
+    sed -i '/^\/tmp/d' /etc/fstab
+
+    for t in $(mount | grep -e "[[:space:]]/tmp[[:space:]]" -e \
+    "[[:space:]]/var/tmp[[:space:]]" -e "[[:space:]]/dev/shm[[:space:]]" \ | awk '{print $3}'); do
+        umount "$t"
+    done
+
+    sed -i '/[[:space:]]\/tmp[[:space:]]/d' /etc/fstab
+
+    ln -s /etc/systemd/system/tmp.mount /etc/systemd/system/default.target.wants/tmp.mount
+    sed -i 's/Options=.*/Options=mode=1777,strictatime,nodev,nosuid/' /etc/systemd/system/tmp.mount
+
+    cp /etc/systemd/system/tmp.mount /etc/systemd/system/var-tmp.mount
+    sed -i 's/\/tmp/\/var\/tmp/g' /etc/systemd/system/var-tmp.mount
+    ln -s /etc/systemd/system/var-tmp.mount /etc/systemd/system/default.target.wants/var-tmp.mount
+
+    cp /etc/systemd/system/tmp.mount /etc/systemd/system/dev-shm.mount
+    sed -i 's/\/tmp/\/dev\/shm/g' /etc/systemd/system/dev-shm.mount
+    ln -s /etc/systemd/system/dev-shm.mount /etc/systemd/system/default.target.wants/dev-shm.mount
+    sed -i 's/Options=.*/Options=mode=1777,strictatime,noexec,nosuid/' /etc/systemd/system/dev-shm.mount
+
+    chmod 0644 /etc/systemd/system/tmp.mount
+    chmod 0644 /etc/systemd/system/var-tmp.mount
+    chmod 0644 /etc/systemd/system/dev-shm.mount
+
+    systemctl daemon-reload
+else
+    echo '/etc/systemd/system/tmp.mount was not found.'
+fi
+################################################################################
+# Disable unwanded and potentially dangerous protocols(OK)
+echo "Disabling unwanded protocols.."
+for disable in $UNW_PROT; do
+    if ! grep -q "$disable" "$DISABLENET" 2> /dev/null; then
+        echo "install $disable /bin/true" >> "$DISABLENET"
+    fi
+done
+################################################################################
+# Disable core dumps(OK)
+echo "Disabling coredump"
+sed -i 's/^#DumpCore=.*/DumpCore=no/' "$SYSTEMCONF"
+sed -i 's/^#CrashShell=.*/CrashShell=no/' "$SYSTEMCONF"
+sed -i 's/^#DefaultLimitCORE=.*/DefaultLimitCORE=0/' "$SYSTEMCONF"
+sed -i 's/^#DefaultLimitNOFILE=.*/DefaultLimitNOFILE=100/' "$SYSTEMCONF"
+sed -i 's/^#DefaultLimitNPROC=.*/DefaultLimitNPROC=100/' "$SYSTEMCONF"
+
+sed -i 's/^#DefaultLimitCORE=.*/DefaultLimitCORE=0/' "$USERCONF"
+sed -i 's/^#DefaultLimitNOFILE=.*/DefaultLimitNOFILE=100/' "$USERCONF"
+sed -i 's/^#DefaultLimitNPROC=.*/DefaultLimitNPROC=100/' "$USERCONF"
+
+systemctl daemon-reload
+
+if test -f "$COREDUMPCONF"; then
+    echo "Fixing Systemd/coredump.conf"
+    sed -i 's/^#Storage=.*/Storage=none/' "$COREDUMPCONF"
+
+    systemctl restart systemd-journald
+
+    if [[ $VERBOSE == "Y" ]]; then
+        systemctl status systemd-journald --no-pager
+        echo
+    fi
+fi
+################################################################################
+# Configure sysctl parameters(OK)
+echo "Configuring sysctl parameters..."
+
+cat > $SYSCTL <<EOF
+#
+# /etc/sysctl.conf - Configuration file for setting system variables
+# See /etc/sysctl.d/ for additional system variables.
+# See sysctl.conf (5) for information.
+#
+# Documentation:
+# "Draft Red Hat 7 STIG Version 1, Release 0.1"
+# "Guide to the Secure Configuration of Red Hat Enterprise Linux 5"
+# "CIS Ubuntu 12.04 LTS Server Benchmark v1.0.0"
+# https://wiki.ubuntu.com/Security/Features
+#
+
+fs.protected_hardlinks = 1
+fs.protected_symlinks = 1
+fs.suid_dumpable = 0
+kernel.core_uses_pid = 1
+kernel.kptr_restrict = 2
+kernel.panic = 60
+kernel.panic_on_oops = 60
+kernel.perf_event_paranoid = 2
+kernel.randomize_va_space = 2
+kernel.sysrq = 0
+kernel.yama.ptrace_scope = 1
+net.ipv4.conf.all.accept_redirects = 0
+net.ipv4.conf.all.accept_source_route = 0
+net.ipv4.conf.all.log_martians = 1
+net.ipv4.conf.all.rp_filter = 1
+net.ipv4.conf.all.secure_redirects = 0
+net.ipv4.conf.all.send_redirects = 0
+net.ipv4.conf.default.accept_redirects = 0
+net.ipv4.conf.default.accept_source_route = 0
+net.ipv4.conf.default.log_martians = 1
+net.ipv4.conf.default.rp_filter= 1
+net.ipv4.conf.default.secure_redirects = 0
+net.ipv4.conf.default.send_redirects = 0
+net.ipv4.icmp_echo_ignore_broadcasts = 1
+net.ipv4.icmp_ignore_bogus_error_responses = 1
+net.ipv4.ip_forward = 0
+net.ipv4.tcp_max_syn_backlog = 2048
+net.ipv4.tcp_rfc1337 = 1
+net.ipv4.tcp_synack_retries = 2
+net.ipv4.tcp_syncookies = 1
+net.ipv4.tcp_syn_retries = 5
+net.ipv4.tcp_timestamps = 0
+net.ipv4.conf.all.forwarding = 0
+net.ipv6.conf.all.disable_ipv6 = 1
+net.ipv6.conf.default.disable_ipv6 = 1
+net.ipv6.conf.lo.disable_ipv6 = 1
+net.ipv6.conf.all.use_tempaddr = 2
+net.ipv6.conf.all.accept_ra = 0
+net.ipv6.conf.all.accept_redirects = 0
+net.ipv6.conf.default.accept_ra = 0
+net.ipv6.conf.default.accept_ra_defrtr = 0
+net.ipv6.conf.default.accept_ra_pinfo = 0
+net.ipv6.conf.default.accept_redirects = 0
+net.ipv6.conf.default.autoconf = 0
+net.ipv6.conf.default.dad_transmits = 0
+net.ipv6.conf.default.max_addresses = 1
+net.ipv6.conf.default.router_solicitations = 0
+net.ipv6.conf.default.use_tempaddr = 2
+net.ipv6.conf.eth0.accept_ra_rtr_pref = 0
+net.ipv6.conf.all.forwarding = 0
+net.netfilter.nf_conntrack_max = 2000000
+net.netfilter.nf_conntrack_tcp_loose = 0
+EOF
+
+sed -i '/net.ipv6.conf.eth0.accept_ra_rtr_pref/d' "$SYSCTL"
+
+for i in $(arp -n -a | awk '{print $NF}' | sort | uniq); do
+    echo "net.ipv6.conf.$i.accept_ra_rtr_pref = 0" >> "$SYSCTL"
+done
+
+echo 1048576 > /sys/module/nf_conntrack/parameters/hashsize
+
+chmod 0600 "$SYSCTL"
+systemctl restart systemd-sysctl
+
+if [[ $VERBOSE == "Y" ]]; then
+    systemctl status systemd-sysctl --no-pager
+    echo
+fi
+################################################################################
+# Configure user security limits(OK)
+echo "Setting limits..."
+
+sed -i 's/^# End of file*//' "$LIMITSCONF"
+echo "* hard maxlogins 10" >> "$LIMITSCONF"
+echo "* hard core 0" >> "$LIMITSCONF"
+echo "* soft nproc 100" >> "$LIMITSCONF"
+echo "* hard nproc 150" >> "$LIMITSCONF"
+echo "# End of file" >> "$LIMITSCONF"
+################################################################################
+# Remove suid bits(OK)
+echo "Removing suid bits"
+
+for p in /bin/fusermount /bin/mount /bin/ping /bin/ping6 /bin/su /bin/umount \
+         /usr/bin/bsd-write /usr/bin/chage /usr/bin/chfn /usr/bin/chsh \
+         /usr/bin/mlocate /usr/bin/mtr /usr/bin/newgrp /usr/bin/pkexec \
+         /usr/bin/traceroute6.iputils /usr/bin/wall /usr/sbin/pppd;
+do
+    if [ -e "$p" ]; then
+        oct=$(stat -c "%a" $p |sed 's/^4/0/')
+        ug=$(stat -c "%U %G" $p)
+        dpkg-statoverride --remove $p 2> /dev/null
+        dpkg-statoverride --add "$ug" "$oct" $p 2> /dev/null
+        chmod -s $p
+    fi
+done
+
+for SHELL in $(cat /etc/shells); do
+    if [ -x "$SHELL" ]; then
+        chmod -s "$SHELL"
+    fi
+done
+################################################################################
+# Set umask(OK)
+echo "Setting umask..."
+sed -i 's/umask 022/umask 027/g' /etc/init.d/rc
+
+if ! grep -q -i "umask" "/etc/profile" 2> /dev/null; then
+    echo "umask 027" >> /etc/profile
+fi
+
+if ! grep -q -i "umask" "/etc/bash.bashrc" 2> /dev/null; then
+    echo "umask 027" >> /etc/bash.bashrc
+fi
+################################################################################
+# Lock up CTRL+ALT+DEL(OK)
+echo "Lockup Ctrl-alt-delete"
+
+systemctl mask ctrl-alt-del.target
+
+if [[ $VERBOSE == "Y" ]]; then
+    systemctl status ctrl-alt-del.target --no-pager
+    echo
+fi
+################################################################################
+# Disable root logins(OK)
+echo "Disabling root logins..."
+
+sed -i 's/^#+ : root : 127.0.0.1/+ : root : 127.0.0.1/' "$SECURITYACCESS"
+echo '' > /etc/securetty
+################################################################################
+# Secure user and services host files(OK)
+echo "Securing .rhosts and hosts.equiv"
+
+for dir in $(awk -F ":" '{print $6}' /etc/passwd); do
+    find "$dir" \( -name "hosts.equiv" -o -name ".rhosts" \) -exec rm -f {} \; 2> /dev/null
+done
+    
+if [[ -f /etc/hosts.equiv ]]; then
+    rm /etc/hosts.equiv
+fi
+################################################################################
+# Configure Banners(OK)
+echo "Configuring Banners..."
+
+for f in /etc/issue /etc/issue.net /etc/motd; do
+    TEXT="\nAuthorized users only. All activity may be monitored and reported.\n"
+    echo -e "$TEXT" > $f
+done
+################################################################################
+# Configure TCP Wrappers(OK)
+echo "Configuring TCP Wrappers"
+
+if [[ $SERVER == "Y" ]]; then
+    echo "sshd : ALL : ALLOW" > /etc/hosts.allow
+fi
+echo "ALL: LOCAL, 127.0.0.1" >> /etc/hosts.allow
+echo "ALL: PARANOID" > /etc/hosts.deny
+chmod 644 /etc/hosts.allow
+chmod 644 /etc/hosts.deny
+################################################################################
+# Configure logindefs(OK)
+echo "Configuring logindefs..."
+
+sed -i 's/^.*LOG_OK_LOGINS.*/LOG_OK_LOGINS\t\tyes/' "$LOGINDEFS"
+sed -i 's/^UMASK.*/UMASK\t\t077/' "$LOGINDEFS"
+sed -i 's/^PASS_MIN_DAYS.*/PASS_MIN_DAYS\t\t7/' "$LOGINDEFS"
+sed -i 's/^PASS_MAX_DAYS.*/PASS_MAX_DAYS\t\t30/' "$LOGINDEFS"
+sed -i 's/DEFAULT_HOME.*/DEFAULT_HOME no/' "$LOGINDEFS"
+sed -i 's/USERGROUPS_ENAB.*/USERGROUPS_ENAB no/' "$LOGINDEFS"
+sed -i 's/^# SHA_CRYPT_MAX_ROUNDS.*/SHA_CRYPT_MAX_ROUNDS\t\t10000/' "$LOGINDEFS"
+################################################################################
+# Configure loginconf(OK)
+echo "Configuring logind..."
+
+sed -i 's/^#KillUserProcesses=no/KillUserProcesses=1/' "$LOGINDCONF"
+sed -i 's/^#KillExcludeUsers=root/KillExcludeUsers=root/' "$LOGINDCONF"
+sed -i 's/^#IdleAction=ignore/IdleAction=lock/' "$LOGINDCONF"
+sed -i 's/^#IdleActionSec=30min/IdleActionSec=15min/' "$LOGINDCONF"
+sed -i 's/^#RemoveIPC=yes/RemoveIPC=yes/' "$LOGINDCONF"
+
+systemctl daemon-reload
+################################################################################
+# Locking new user shell by default(OK)
+echo "Setting new user settings..."
+
+sed -i 's/DSHELL=.*/DSHELL=\/bin\/false/' "$ADDUSER"
+sed -i 's/SHELL=.*/SHELL=\/bin\/false/' "$USERADD"
+sed -i 's/^# INACTIVE=.*/INACTIVE=35/' "$USERADD"
+################################################################################
+# Apply account password policy(OK)
+echo "Applying Account password Policy..."
+
+sed -i 's/^password[\t].*.pam_cracklib.*/password\trequired\t\t\tpam_cracklib.so \
+retry=3 maxrepeat=3 minlen=15 dcredit=-1 ucredit=-1 ocredit=-1 lcredit=-1 difok=8/' "$COMMONPASSWD"
+sed -i 's/try_first_pass sha512.*/try_first_pass sha512 remember=5/' "$COMMONPASSWD"
+sed -i 's/nullok_secure//' "$COMMONAUTH"
+
+if ! grep tally "$COMMONAUTH"; then
+    sed -i '/^$/a auth required pam_tally.so file=/var/log/faillog deny=5 unlock_time=900' "$COMMONAUTH"
+    sed -i '/pam_tally.so/d' "$COMMONACCOUNT"
+    echo 'account required pam_tally.so reset' >> "$COMMONACCOUNT"
+fi
+
+sed -i 's/pam_lastlog.so.*/pam_lastlog.so showfailed/' "$PAMLOGIN"
+sed -i 's/delay=.*/delay=4000000/' "$PAMLOGIN"
+################################################################################
+# Lock out root account(OK)
+echo "Locking out root account..."
+
+usermod -L root
+
+if [[ $VERBOSE == "Y" ]]; then
+    passwd -S root
+    echo
+fi
+################################################################################
+# Remove unneeded users(OK)
+echo "Removing unwanted users"
+
+for users in games gnats irc list news uucp; do
+    userdel -r "$users" 2> /dev/null
+done
+################################################################################
+# Secure Apache(OK)
+chmod 511 /usr/sbin/apache2
+chown 0:0 /usr/sbin/apache2
+chattr +i /etc/apache2/apache2.conf
+
+a2dismod autoindex
+
+cat > "$APACHE2DFILE" <<EOF
+<Directory />
+  Order Deny,Allow
+  Deny from all
+  Options None
+  AllowOverride None
+</Directory>
+
+<Directory /var/www/>
+    Order Allow,Deny
+    Allow from all
+    Options +FollowSymLinks -Indexes +IncludesNoExec
+    AllowOverride None
+    Require all granted
+</Directory>
+
+ServerSignature Off
+ServerTokens Prod
+TraceEnable Off
+EOF
+
+a2enconf custom_secure
+
+# Enable mod_security
+mv /etc/modsecurity/modsecurity.conf-recommended $MODSEC
+sed -i 's/.*SecRuleEngine.*/SecRuleEngine On/' "$MODSEC"
+sed -i 's/.*SecRequestBodyLimit.*/SecRequestBodyLimit 16384000/' "$MODSEC"
+sed -i 's/.*SecRequestBodyInMemoryLimit.*/SecRequestBodyInMemoryLimit 16384000/' "$MODSEC"
+
+wget -O /tmp/SpiderLabs-owasp-modsecurity-crs.tar.gz \
+https://github.com/SpiderLabs/owasp-modsecurity-crs/tarball/master
+cd /tmp
+tar -zxvf ./SpiderLabs-owasp-modsecurity-crs.tar.gz
+cp -R SpiderLabs-owasp-modsecurity-crs-*/* /etc/modsecurity/
+rm -R SpiderLabs-owasp-modsecurity-crs-*
+mv /etc/modsecurity/modsecurity_crs_10_setup.conf.example /etc/modsecurity/modsecurity_crs_10_setup.conf
+
+cd /etc/modsecurity/base_rules
+for f in * ; do sudo ln -s /etc/modsecurity/base_rules/$f /etc/modsecurity/activated_rules/$f ; done
+cd /etc/modsecurity/optional_rules
+for f in * ; do sudo ln -s /etc/modsecurity/optional_rules/$f /etc/modsecurity/activated_rules/$f ; done
+
+cat > /etc/apache2/mods-available/security2.conf <<EOF
+<IfModule security2_module>
+        # Default Debian dir for modsecurity's persistent data
+        SecDataDir /var/cache/modsecurity
+
+        # Include all the *.conf files in /etc/modsecurity.
+        # Keeping your local configuration in that directory
+        # will allow for an easy upgrade of THIS file and
+        # make your life easier
+        IncludeOptional /etc/modsecurity/*.conf
+        IncludeOptional /etc/modsecurity/activated_rules/*.conf
+</IfModule>
+EOF
+
+# Enable mod_evasive
+mkdir /var/log/mod_evasive
+chown www-data:www-data /var/log/mod_evasive/
+
+cat > /etc/apache2/mods-available/evasive.conf <<EOF
+<ifmodule mod_evasive20.c>
+   DOSHashTableSize 3097
+   DOSPageCount  2
+   DOSSiteCount  50
+   DOSPageInterval 1
+   DOSSiteInterval  1
+   DOSBlockingPeriod  10
+   DOSLogDir   /var/log/mod_evasive
+   DOSEmailNotify  root@localhost
+   DOSWhitelist   127.0.0.1
+</ifmodule>
+EOF
+
+a2enmod ssl evasive security2 headers
+service apache2 restart
+
+# Enable fail2ban
+cat >> /etc/fail2ban/jail.d/defaults-debian.conf <<EOF
+
+[apache-modsecurity]
+enabled = true
+
+[apache-shellshock]
+enabled = true
+EOF
+
+service fail2ban restart
+################################################################################
+# Secure NFS(OK)
+echo "Enabling Kerberos Authentication fos NFS4"
+sed -i 's/.*NEED_SVCGSSD=.*/NEED_SVCGSSD=yes/' /etc/default/nfs-kernel-server
+################################################################################
+# Configure sshd server(OK)
+echo "Configuring sshd..."
+
+cp "$SSHDFILE" "$SSHDFILE-$(date +%s)"
+
+sed -i '/HostKey.*ssh_host_dsa_key.*/d' "$SSHDFILE"
+sed -i 's/.*AuthenticationMethods.*/AuthenticationMethods publickey,gssapi-with-mic \
+publickey,keyboard-interactive/' "$SSHDFILE"
+sed -i 's/.*X11Forwarding.*/X11Forwarding no/' "$SSHDFILE"
+sed -i 's/.*Port.*/Port 1027/' "$SSHDFILE"
+sed -i 's/.*LoginGraceTime.*/LoginGraceTime 20/' "$SSHDFILE"
+sed -i 's/.*PermitRootLogin.*/PermitRootLogin no/' "$SSHDFILE"
+sed -i 's/.*KeyRegenerationInterval.*/KeyRegenerationInterval 1800/' "$SSHDFILE"
+sed -i 's/.*UsePrivilegeSeparation.*/UsePrivilegeSeparation sandbox/' "$SSHDFILE"
+sed -i 's/.*LogLevel.*/LogLevel VERBOSE/' "$SSHDFILE"
+sed -i 's/.*UseLogin.*/UseLogin no/' "$SSHDFILE"
+sed -i 's/.*Banner.*/Banner \/etc\/issue.net/' "$SSHDFILE"
+sed -i 's/.*Subsystem sftp.*/Subsystem sftp \/usr\/lib\/ssh\/sftp-server -f AUTHPRIV -l INFO/' "$SSHDFILE"
+
+if ! grep -q "AllowGroups" "$SSHDFILE" 2> /dev/null; then
+    echo "AllowGroups $SSH_GROUPS" >> "$SSHDFILE"
+fi
+
+if ! grep -q "MaxAuthTries" "$SSHDFILE" 2> /dev/null; then
+    echo "MaxAuthTries 4" >> "$SSHDFILE"
+fi
+
+if ! grep -q "ClientAliveInterval" "$SSHDFILE" 2> /dev/null; then
+    echo "ClientAliveInterval 300" >> "$SSHDFILE"
+fi
+
+if ! grep -q "ClientAliveCountMax" "$SSHDFILE" 2> /dev/null; then
+    echo "ClientAliveCountMax 0" >> "$SSHDFILE"
+fi
+
+if ! grep -q "PermitUserEnvironment" "$SSHDFILE" 2> /dev/null; then
+    echo "PermitUserEnvironment no" >> "$SSHDFILE"
+fi
+
+if ! grep -q "KexAlgorithms" "$SSHDFILE" 2> /dev/null; then
+    echo 'KexAlgorithms curve25519-sha256@libssh.org,ecdh-sha2-nistp521,\
+    ecdh-sha2-nistp384,ecdh-sha2-nistp256,diffie-hellman-group-exchange-sha256' >> "$SSHDFILE"
+fi
+
+if ! grep -q "Ciphers" "$SSHDFILE" 2> /dev/null; then
+    echo 'Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes256-ctr' >> "$SSHDFILE"
+fi
+
+if ! grep -q "Macs" "$SSHDFILE" 2> /dev/null; then
+    echo 'Macs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,\
+    hmac-sha2-512,hmac-sha2-256' >> "$SSHDFILE"
+fi
+
+if ! grep -q "MaxSessions" "$SSHDFILE" 2> /dev/null; then
+    echo "MaxSessions 2" >> "$SSHDFILE"
+fi
+
+if ! grep -q "UseDNS" "$SSHDFILE" 2> /dev/null; then
+    echo "UseDNS yes" >> "$SSHDFILE"
+fi
+
+# Fail2Ban is already enabled by default for sshd
+# Restarting Service
+systemctl restart sshd.service
+
+if [[ $VERBOSE == "Y" ]]; then
+    systemctl status sshd.service --no-pager
+    echo
+fi
+################################################################################
+# Lock up cronjobs(OK)
+echo "Locking up cronjobs..."
+
+rm /etc/cron.deny 2> /dev/null
+rm /etc/at.deny 2> /dev/null
+
+echo 'root' > /etc/cron.allow
+echo 'root' > /etc/at.allow
+
+chown root:root /etc/cron*
+chmod og-rwx /etc/cron*
+
+chown root:root /etc/at*
+chmod og-rwx /etc/at*
+
+systemctl mask atd.service
+systemctl stop atd.service
+systemctl daemon-reload
+
+sed -i 's/^#cron./cron./' /etc/rsyslog.d/50-default.conf
+
+if [[ $VERBOSE == "Y" ]]; then
+    systemctl status atd.service --no-pager
+    echo
+fi
+################################################################################
+# Configure UFW(OK)
+echo "Configuring Firewall.."
+sed -i 's/IPT_SYSCTL=.*/IPT_SYSCTL=\/etc\/sysctl\.conf/' "$UFWDEFAULT"
+ufw --force enable
+
+for ip in $FW_LOCAL; do
+    ufw allow log from "$ip" to any port 1027 proto tcp # SSH
+done
+
+if [[ $SERVER == "Y" ]]; then
+    ufw allow proto tcp from any to any port 1027 #SSH
+    ufw allow http
+    ufw allow samba
+    ufw allow nfs
+fi
+
+if [[ $VERBOSE == "Y" ]]; then
+    systemctl status ufw.service --no-pager
+    ufw status verbose
+    echo
+fi
+################################################################################
+# Disable IPV6(OK)
+sed -i 's/^GRUB_CMDLINE_LINUX=.*/GRUB_CMDLINE_LINUX="ipv6.disable=1"/' "$DEFAULTGRUB"
+update-grub
+
+sed '/udp6/d' /etc/netconfig
+sed '/tcp6/d' /etc/netconfig 
+################################################################################
+# Configure DNS resolvers(OK)
+echo "Confuguring DNS..."
+
+dnsarray=( $(grep nameserver /etc/resolv.conf | sed 's/nameserver//g') )
+dnslist=${dnsarray[@]}
+
+sed -i "s/^#DNS=.*/DNS=$dnslist/" "$RESOLVEDCONF"
+sed -i "s/^#FallbackDNS=.*/FallbackDNS=8.8.8.8 8.8.4.4/" "$RESOLVEDCONF"
+sed -i "s/^#DNSSEC=.*/DNSSEC=allow-downgrade/" "$RESOLVEDCONF"
+sed -i '/^hosts:/ s/files dns/files resolve dns/' /etc/nsswitch.conf
+
+systemctl daemon-reload
+
+if [[ $VERBOSE == "Y" ]]; then
+    systemctl status resolvconf.service --no-pager
+    echo
+fi
+################################################################################
+# Securing NTP(OK)
+echo "Securing NTP..."
+
+LATENCY="50"
+SERVERS="4"
+APPLY="YES"
+CONF="$TIMESYNCD"
+SERVERARRAY=()
+FALLBACKARRAY=()
+TMPCONF=$(mktemp --tmpdir ntpconf.XXXXX)
+
+if [[ -z "$NTPSERVERPOOL" ]]; then
+    NTPSERVERPOOL="0.ubuntu.pool.ntp.org 1.ubuntu.pool.ntp.org \
+    2.ubuntu.pool.ntp.org 3.ubuntu.pool.ntp.org pool.ntp.org"
+fi
+
+echo "[Time]" > "$TMPCONF"
+
+PONG="ping -c2"
+
+for s in $(dig +noall +answer +nocomments $NTPSERVERPOOL | awk '{print $5}'); do
+    if [[ $NUMSERV -ge $SERVERS ]]; then
+        break
+    fi
+
+    PINGSERV=$($PONG "$s" | grep 'rtt min/avg/max/mdev' | awk -F "/" '{printf "%.0f\n",$6}')
+    if [[ $PINGSERV -gt "1" && $PINGSERV -lt "$LATENCY" ]]; then
+        OKSERV=$(nslookup "$s"|grep "name = " | awk '{print $4}'|sed 's/.$//')
+        if [[ $OKSERV && $NUMSERV -lt $SERVERS && ! (( $(grep "$OKSERV" "$TMPCONF") )) ]]; then
+            echo "$OKSERV has latency < $LATENCY"
+            SERVERARRAY+=("$OKSERV")
+            ((NUMSERV++))
+        fi
+    fi
+done
+
+for l in $NTPSERVERPOOL; do
+    if [[ $FALLBACKSERV -le "2" ]]; then
+        FALLBACKARRAY+=("$l")
+        ((FALLBACKSERV++))
+    else
+        break
+    fi
+done
+
+    if [[ ${#SERVERARRAY[@]} -le "2" ]]; then
+        for s in $(echo "$NTPSERVERPOOL" | awk '{print $(NF-1),$NF}'); do
+            SERVERARRAY+=("$s")
+        done
+    fi
+
+    echo "NTP=${SERVERARRAY[@]}" >> "$TMPCONF"
+    echo "FallbackNTP=${FALLBACKARRAY[@]}" >> "$TMPCONF"
+
+    if [[ $APPLY = "YES" ]]; then
+        cat "$TMPCONF" > "$CONF"
+        systemctl restart systemd-timesyncd
+        rm "$TMPCONF"
+    else
+        echo "Configuration saved to $TMPCONF."
+    fi
+
+    if [[ $VERBOSE == "Y" ]]; then
+        systemctl status systemd-timesyncd --no-pager
+        echo
+    fi
+################################################################################
+# Configure logrotate(OK)
+echo "Configuring logrotate..."
+
+cat > "$LOGROTATE" <<EOF
+# see "man logrotate" for details
+# rotate log files daily
+daily
+
+# use the syslog group by default, since this is the owning group
+# of /var/log/syslog.
+su root syslog
+
+# keep 7 days worth of backlogs
+rotate 7
+
+# create new (empty) log files after rotating old ones
+create
+
+# use date as a suffix of the rotated file
+dateext
+
+# compressed log files
+compress
+
+# use xz to compress
+compresscmd /usr/bin/xz
+uncompresscmd /usr/bin/unxz
+compressext .xz
+
+# packages drop log rotation information into this directory
+include /etc/logrotate.d
+
+# no packages own wtmp and btmp -- we'll rotate them here
+/var/log/wtmp {
+    monthly
+    create 0664 root utmp
+    minsize 1M
+    rotate 1
+}
+
+/var/log/btmp {
+    missingok
+    monthly
+    create 0600 root utmp
+    rotate 1
+}
+
+# system-specific logs may be also be configured here.
+EOF
+
+sed -i 's/^#Storage=.*/Storage=persistent/' "$JOURNALDCONF"
+sed -i 's/^#ForwardToSyslog=.*/ForwardToSyslog=yes/' "$JOURNALDCONF"
+sed -i 's/^#Compress=.*/Compress=yes/' "$JOURNALDCONF"
+
+systemctl restart systemd-journald
+
+if [[ $VERBOSE == "Y" ]]; then
+    systemctl status systemd-journald --no-pager
+    echo
+fi
+################################################################################
+# Enforcing auditd rules
+echo "Enforcing Auditd rules..."
+sed -i 's/^action_mail_acct =.*/action_mail_acct = root/' "$AUDITDCONF"
+sed -i 's/^admin_space_left_action = .*/admin_space_left_action = halt/' "$AUDITDCONF"
+sed -i 's/^max_log_file_action =.*/max_log_file_action = keep_logs/' "$AUDITDCONF"
+sed -i 's/^space_left_action =.*/space_left_action = email/' "$AUDITDCONF"
+sed -i 's/^GRUB_CMDLINE_LINUX=.*/GRUB_CMDLINE_LINUX="ipv6.disable=1 audit=1"/' "$DEFAULTGRUB"
+
+cat > /etc/audit/audit.rules <<EOF
+## Remove any existing rules
+-D
+
+## Buffer Size
+-b 8192
+
+## Failure Mode
+-f 2
+
+## Audit the audit logs 
+-w /var/log/audit/ -k auditlog
+
+## Auditd configuration
+-w /etc/audit/ -p wa -k auditconfig
+-w /etc/libaudit.conf -p wa -k auditconfig
+-w /etc/audisp/ -p wa -k audispconfig
+
+## Monitor for use of audit management tools
+-w /sbin/auditctl -p x -k audittools
+-w /sbin/auditd -p x -k audittools
+
+## Monitor AppArmor configuration changes
+-w /etc/apparmor/ -p wa -k apparmor
+-w /etc/apparmor.d/ -p wa -k apparmor
+
+## Monitor usage of AppArmor tools
+-w /sbin/apparmor_parser -p x -k apparmor_tools
+-w /usr/sbin/aa-complain -p x -k apparmor_tools
+-w /usr/sbin/aa-disable -p x -k apparmor_tools
+-w /usr/sbin/aa-enforce -p x -k apparmor_tools
+
+## Monitor Systemd configuration changes
+-w /etc/systemd/ -p wa -k systemd
+-w /lib/systemd/ -p wa -k systemd
+
+## Monitor usage of systemd tools
+-w /bin/systemctl -p x -k systemd_tools
+-w /bin/journalctl -p x -k systemd_tools 
+
+## Special files
+-a always,exit -F arch=b64 -S mknod -S mknodat -k specialfiles
+
+## Mount operations
+-a always,exit -F arch=b64 -S mount -S umount2 -k mount 
+
+## Changes to the time
+-a always,exit -F arch=b64 -S adjtimex -S settimeofday -S clock_settime -k time
+
+## Cron configuration & scheduled jobs
+-w /etc/cron.allow -p wa -k cron
+-w /etc/cron.deny -p wa -k cron
+-w /etc/cron.d/ -p wa -k cron
+-w /etc/cron.daily/ -p wa -k cron
+-w /etc/cron.hourly/ -p wa -k cron
+-w /etc/cron.monthly/ -p wa -k cron
+-w /etc/cron.weekly/ -p wa -k cron
+-w /etc/crontab -p wa -k cron
+-w /var/spool/cron/crontabs/ -k cron
+
+## User, group, password databases
+-w /etc/group -p wa -k etcgroup
+-w /etc/passwd -p wa -k etcpasswd
+-w /etc/gshadow -k etcgroup
+-w /etc/shadow -k etcpasswd
+-w /etc/security/opasswd -k opasswd
+
+## Monitor usage of passwd
+-w /usr/bin/passwd -p x -k passwd_modification
+
+## Monitor for use of tools to change group identifiers
+-w /usr/sbin/groupadd -p x -k group_modification
+-w /usr/sbin/groupmod -p x -k group_modification
+-w /usr/sbin/addgroup -p x -k group_modification
+-w /usr/sbin/useradd -p x -k user_modification
+-w /usr/sbin/usermod -p x -k user_modification
+-w /usr/sbin/adduser -p x -k user_modification
+
+## Monitor module tools
+-w /sbin/insmod -p x -k modules
+-w /sbin/rmmod -p x -k modules
+-w /sbin/modprobe -p x -k modules
+
+## Login configuration and information
+-w /etc/login.defs -p wa -k login
+-w /etc/securetty -p wa -k login
+-w /var/log/faillog -p wa -k login
+-w /var/log/lastlog -p wa -k login
+-w /var/log/tallylog -p wa -k login
+
+## Network configuration
+-w /etc/hosts -p wa -k hosts
+-w /etc/network/ -p wa -k network
+
+## System startup scripts
+-w /etc/inittab -p wa -k init
+-w /etc/init.d/ -p wa -k init
+-w /etc/init/ -p wa -k init
+
+## Library search paths
+-w /etc/ld.so.conf -p wa -k libpath
+
+## Local time zone
+-w /etc/localtime -p wa -k localtime
+
+## Time zone configuration
+-w /etc/timezone -p wa -k timezone
+
+## Kernel parameters
+-w /etc/sysctl.conf -p wa -k sysctl
+
+## Modprobe configuration
+-w /etc/modprobe.conf -p wa -k modprobe
+-w /etc/modprobe.d/ -p wa -k modprobe
+-w /etc/modules -p wa -k modprobe
+
+# Module manipulations.
+-a always,exit -F arch=b64 -S init_module -S delete_module -k modules
+
+## PAM configuration
+-w /etc/pam.d/ -p wa -k pam
+-w /etc/security/limits.conf -p wa -k pam
+-w /etc/security/pam_env.conf -p wa -k pam
+-w /etc/security/namespace.conf -p wa -k pam
+-w /etc/security/namespace.init -p wa -k pam
+
+## Postfix configuration
+-w /etc/aliases -p wa -k mail
+-w /etc/postfix/ -p wa -k mail
+
+## SSH configuration
+-w /etc/ssh/sshd_config -k sshd
+
+## Changes to hostname
+-a exit,always -F arch=b64 -S sethostname -k hostname
+
+## Changes to issue
+-w /etc/issue -p wa -k etcissue
+-w /etc/issue.net -p wa -k etcissue
+
+## Capture all failures to access on critical elements
+-a exit,always -F arch=b64 -S open -F dir=/etc -F success=0 -k unauthedfileaccess
+-a exit,always -F arch=b64 -S open -F dir=/bin -F success=0 -k unauthedfileaccess
+-a exit,always -F arch=b64 -S open -F dir=/sbin -F success=0 -k unauthedfileaccess
+-a exit,always -F arch=b64 -S open -F dir=/usr/bin -F success=0 -k unauthedfileaccess
+-a exit,always -F arch=b64 -S open -F dir=/usr/sbin -F success=0 -k unauthedfileaccess
+-a exit,always -F arch=b64 -S open -F dir=/var -F success=0 -k unauthedfileaccess
+-a exit,always -F arch=b64 -S open -F dir=/home -F success=0 -k unauthedfileaccess
+-a exit,always -F arch=b64 -S open -F dir=/root -F success=0 -k unauthedfileaccess
+-a exit,always -F arch=b64 -S open -F dir=/srv -F success=0 -k unauthedfileaccess
+-a exit,always -F arch=b64 -S open -F dir=/tmp -F success=0 -k unauthedfileaccess
+
+## Monitor for use of process ID change (switching accounts) applications
+-w /bin/su -p x -k priv_esc
+-w /usr/bin/sudo -p x -k priv_esc
+-w /etc/sudoers -p rw -k priv_esc
+
+## Monitor usage of commands to change power state
+-w /sbin/shutdown -p x -k power
+-w /sbin/poweroff -p x -k power
+-w /sbin/reboot -p x -k power
+-w /sbin/halt -p x -k power
+
+## Monitor admins accessing user files.
+-a always,exit -F dir=/home/ -F uid=0 -C auid!=obj_uid -k admin_user_home
+
+## Monitor changes and executions in /tmp and /var/tmp.
+-w /tmp/ -p wxa -k tmp
+-w /var/tmp/ -p wxa -k tmp
+
+## Make the configuration immutable
+-e 2
+EOF
+
+sed -i "s/arch=b64/arch=$(uname -m)/g" /etc/audit/audit.rules
+cp /etc/audit/audit.rules "$AUDITRULES"
+update-grub 2> /dev/null
+
+systemctl enable auditd
+systemctl restart auditd.service
+
+if [[ $VERBOSE == "Y" ]]; then
+    systemctl status auditd.service --no-pager
+    echo
+fi
+################################################################################
+# Enable RKHUNTER(OK)
+echo "Enabling rkhunter..."
+
+sed -i 's/^CRON_DAILY_RUN=.*/CRON_DAILY_RUN="yes"/' "$RKHUNTERCONF"
+sed -i 's/^APT_AUTOGEN=.*/APT_AUTOGEN="yes"/' "$RKHUNTERCONF"
+
+rkhunter --propupd
+################################################################################
+# Enable CLAMAV(OK)
+echo "Enabling CLAMAV..."
+service clamav-daemon start
+freshclam
+service clamav-freshclam start
+
+echo > /etc/cron.daily/user_clamscan <<EOF
+#!/bin/bash
+SCAN_DIR="/home"
+LOG_FILE="/var/log/clamav/user_clamscan.log"
+/usr/bin/clamscan -i -r $SCAN_DIR >> $LOG_FILE
+EOF
+
+chmod +x /etc/cron.daily/user_clamscan
+################################################################################
+# Disable Prelinking(OK)
+ echo "Disabling Prelink for AIDE..."
+
+if dpkg -l | grep prelink 1> /dev/null; then
+    "$(which prelink)" -ua 2> /dev/null
+    "$APT" purge prelink
+fi
+################################################################################
+# Secure AIDE Configuration(OK)
+echo "Securing Aide..."
+
+sed -i 's/^Checksums =.*/Checksums = sha512/' /etc/aide/aide.conf
+################################################################################
+# Set AIDE Postinstall(OK)
+echo "Building AIDE initial db, this will take a while..."
+
+aideinit --yes
+cp /var/lib/aide/aide.db.new /var/lib/aide/aide.db
+
+echo "Enabling AIDE check daily..."
+
+cat > /etc/systemd/system/aidecheck.service <<EOF
+[Unit]
+Description=Aide Check
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/aide.wrapper --check
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+cat > /etc/systemd/system/aidecheck.timer <<EOF
+[Unit]
+Description=Aide check every day at midnight
+
+[Timer]
+OnCalendar=*-*-* 00:00:00
+Unit=aidecheck.service
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+chmod 0644 /etc/systemd/system/aidecheck.*
+
+systemctl reenable aidecheck.timer
+systemctl start aidecheck.timer
+systemctl daemon-reload
+
+if [[ $VERBOSE == "Y" ]]; then
+    systemctl status aidecheck.timer --no-pager
+    echo
+fi
+################################################################################
+# Remove unused packages(OK)
+echo "Removing unused packages..."
+
+$APT purge expect
+
+if [[ $SERVER == "Y" ]]; then
+    echo "Removing X-Window System"
+    $APT purge x-window-system-core
+    echo
+fi
+
+$APT clean
+$APT autoclean
+$APT autoremove
+################################################################################
+# Check systemddelta(OK)
+if [[ $VERBOSE == "Y" ]]; then
+    echo "Checking systemd-delta..."
+    systemd-delta --no-pager
+    echo
+fi
+################################################################################
+# check if reboot is required(OK)
+if [ -f /var/run/reboot-required ]; then
+    cat /var/run/reboot-required
+fi
+
+echo
+\end{verbatim}
+\end{scriptsize}
+\end{appendices}
+
+\appendix
+
+\bibliographystyle{babplain}
+\bibliography{Documentation}
+
+\end{document}
